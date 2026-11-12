@@ -40,7 +40,7 @@ The original text is **historical material, not scientific validation**. It incl
 - **Notes and progress:** local browser storage only. No backend, tracking, or accounts.
 - **Quality assurance:** The 24 parts and 240 Q&As are validated; text can still contain transcription imperfections inherited from the PDF. Compare with an original historical printing for textual scholarship.
 
-A further public-domain edition is available at [Project Gutenberg](https://www.gutenberg.org/ebooks/30508).
+A further public-domain edition is available at [Internet Sacred Text Archive](https://sacred-texts.com/nth/mks/mks00.htm).
 
 ## Roadmap
 
