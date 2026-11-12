@@ -197,3 +197,33 @@ button:disabled { opacity: .35; cursor: not-allowed; }
   .atlas-topics, .atlas-scope, .atlas-more, .atlas-open { display: none !important; }
   .source-text p.passage-active { background: transparent !important; color: #111 !important; }
 }
+
+
+/* Device-voice accessible lesson reader */
+.voice-reader { margin: 24px 0 30px; border: 1px solid #556554; border-radius: 12px; padding: 23px; background: linear-gradient(135deg, #24352f, #172522); }
+.voice-reader-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.voice-reader-head h3 { font-family: Georgia, "Times New Roman", serif; font-size: 25px; margin: 5px 0 8px; color: #f3ead6; }
+.voice-reader-head .source-note { margin: 0 0 13px; }
+.voice-kicker { letter-spacing: .15em; font-size: 10px; color: #d4bb8c; margin: 0; }
+.voice-symbol { width: 42px; height: 42px; border: 1px solid #c1a775; border-radius: 50%; display: grid; place-items: center; color: #e4c78f; font-size: 25px; flex: 0 0 auto; }
+.voice-settings { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(90px, 1fr) minmax(155px, 1.2fr); gap: 12px; margin: 14px 0; }
+.voice-settings label { font-size: 11px; color: #dcccae; display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
+.voice-settings select { background: #14221f; color: #f2eadb; padding: 10px; border: 1px solid #617465; border-radius: 8px; min-width: 0; width: 100%; font-size: 12px; }
+.voice-controls { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0; }
+.voice-controls .primary-button, .voice-controls .secondary-button { font-size: 12px; }
+.voice-progress { font-size: 13px; color: #e9d49d; font-variant-numeric: tabular-nums; margin: 15px 0 0; }
+.voice-footnote { margin-bottom: 0; }
+.voice-warning { color: #f4d39b; background: #31372b; border-left: 3px solid #c6aa73; padding: 12px; line-height: 1.55; font-size: 13px; }
+.source-text p.passage-speaking { border-left: 4px solid #dcc082; padding-left: 16px; background: #304336; border-radius: 0 8px 8px 0; scroll-margin-top: 36px; }
+@media (max-width: 800px) {
+  .voice-settings { grid-template-columns: 1fr 1fr; }
+  .voice-settings label:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .voice-reader { padding: 17px; }
+  .voice-controls > button { flex-grow: 1; }
+}
+@media print {
+  .voice-reader { display: none !important; }
+  .source-text p.passage-speaking { background: transparent !important; border: none !important; padding-left: 0 !important; }
+}

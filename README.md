@@ -7,6 +7,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - All **24 original parts** reproduced from the project founder's 156-page PDF
 - All **240 printed study questions and answers**
 - Search across the complete source text
+- **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, and passage highlighting
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
@@ -69,6 +70,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Voice reader
+
+Open **Original lesson → Listen to this lesson**. The optional narration uses browser/device text-to-speech through the Web Speech API. It reads the historical source wording in short chunks (to avoid browser timeouts), highlighting and following each passage. Users can choose an available device voice, control speed, pause/resume, stop, and skip to a passage or move between passages.
+
+**No keys, server API, or generated paraphrases are required.** Audio quality and voice options are determined by the user's browser and operating system. Some voices are installed locally and can work offline, while optional higher-quality system voices may fetch data from a vendor. This is text-to-speech, not a promise of a custom neural AI narrator. In browsers that don't support speech synthesis, the original text remains fully readable. The reader stops when its lesson view closes or the user navigates to another lesson.
 
 ## Source-linked concept atlas
 

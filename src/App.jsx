@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import lessons from "./data/lessons.json";
 import LibraryTools from "./components/LibraryTools.jsx";
 import ConceptAtlas from "./components/ConceptAtlas.jsx";
+import VoiceReader from "./components/VoiceReader.jsx";
 import { splitPassages } from "./concepts.js";
 
 const TOTAL = lessons.length;
@@ -69,6 +70,7 @@ export default function App() {
   const [week, setWeek] = useStored("mks.week.v1", hashWeek());
   const [tab, setTab] = useState("read");
   const [activePassage, setActivePassage] = useState(hashPassage);
+  const [spokenPassage, setSpokenPassage] = useState(0);
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
@@ -83,6 +85,7 @@ export default function App() {
   const progress = Math.round((done.length / TOTAL) * 100);
   const questions = useMemo(() => studyQuestions(current.study), [current.study]);
   const exercises = useMemo(() => practicePassages(current.reading), [current.reading]);
+  const readingPassages = useMemo(() => splitPassages(current.reading), [current.reading]);
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
     return term ? lessons.filter(item =>
@@ -97,6 +100,7 @@ export default function App() {
     const safe = Math.max(1, Math.min(TOTAL, Number(next)));
     setWeek(safe);
     setActivePassage(0);
+    setSpokenPassage(0);
     setTab("read");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + safe);
@@ -109,6 +113,7 @@ export default function App() {
         passage > splitPassages(lessons[targetWeek - 1].reading).length) return;
     setWeek(targetWeek);
     setActivePassage(passage);
+    setSpokenPassage(0);
     setTab("read");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + targetWeek + "-p-" + passage);
@@ -118,6 +123,7 @@ export default function App() {
     const update = () => {
       setWeek(hashWeek());
       setActivePassage(hashPassage());
+      setSpokenPassage(0);
       setTab("read");
       setShowAbout(false);
     };
@@ -135,6 +141,19 @@ export default function App() {
     });
     return () => window.cancelAnimationFrame(handle);
   }, [tab, week, activePassage, showAbout]);
+
+  useEffect(() => {
+    if (tab !== "read" || showAbout || !spokenPassage) return;
+    const handle = window.requestAnimationFrame(() => {
+      document.getElementById("source-passage-" + spokenPassage)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(handle);
+  }, [tab, week, spokenPassage, showAbout]);
+
+  useEffect(() => {
+    if (tab !== "read" || showAbout) setSpokenPassage(0);
+  }, [tab, showAbout]);
 
   useEffect(() => {
     if (!running) return;
@@ -158,6 +177,7 @@ export default function App() {
     setDone(backup.completed);
     setWeek(backup.week);
     setActivePassage(0);
+    setSpokenPassage(0);
     setTab("notes");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + backup.week);
@@ -229,7 +249,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -265,10 +285,15 @@ export default function App() {
                 <div className="card-top"><span className="source-tag">PRIMARY SOURCE · {current.originalHeading}</span><span className="reading-length">{Math.round(current.reading.split(/\s+/).length / 200)} MIN READ</span></div>
                 <h2>The original lesson</h2>
                 <p className="source-note">Historical text reproduced for study. Claims reflect the author's views, not established scientific findings.</p>
+                <VoiceReader key={current.week} passages={readingPassages}
+                  startPassage={activePassage || 1} onPassageChange={setSpokenPassage} />
                 <article className="source-text">
-                  {splitPassages(current.reading).map((block, index) => (
+                  {readingPassages.map((block, index) => (
                     <p key={index} id={"source-passage-" + (index + 1)}
-                      tabIndex={-1} className={activePassage === index + 1 ? "passage-active" : undefined}>
+                      tabIndex={-1} className={[
+                        activePassage === index + 1 ? "passage-active" : "",
+                        spokenPassage === index + 1 ? "passage-speaking" : "",
+                      ].filter(Boolean).join(" ") || undefined}>
                       {block}
                     </p>
                   ))}
