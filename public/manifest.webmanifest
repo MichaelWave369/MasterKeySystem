@@ -1,0 +1,14 @@
+{
+  "id": "./",
+  "name": "The Master Key System - Study Library",
+  "short_name": "Master Key",
+  "description": "Read and study all 24 original parts of The Master Key System, even offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101a1b",
+  "theme_color": "#101a1b",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Master Key System">
+  <rect width="512" height="512" rx="108" fill="#101a1b"/>
+  <circle cx="256" cy="256" r="177" fill="none" stroke="#cca773" stroke-width="8"/>
+  <circle cx="256" cy="256" r="125" fill="none" stroke="#cca773" stroke-opacity=".54" stroke-width="5"/>
+  <path d="M256 115 L285 227 397 256 285 285 256 397 227 285 115 256 227 227Z" fill="#e6c78d"/>
+  <circle cx="256" cy="256" r="28" fill="#101a1b"/>
+</svg>
