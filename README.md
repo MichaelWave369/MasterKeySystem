@@ -7,6 +7,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - All **24 original parts** reproduced from the project founder's 156-page PDF
 - All **240 printed study questions and answers**
 - Search across the complete source text
+- Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
 - Optional concentration timer with source-based practice excerpts
@@ -68,6 +69,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Source-linked concept atlas
+
+The Concept Atlas is a **navigation index, not an interpretation of the author's correctness**. Ten editorial topic labels use literal keyword patterns to identify and link the matching original passages. Each excerpt links into a numbered passage in the reader. For example, an Atlas link has the form `#week-6-p-24`, which can be bookmarked and reloaded, and works with the offline study reader.
+
+The original 24 lessons are unchanged; editorial topic labels and matching logic live separately in `src/concepts.js`. Source-link validation checks that every index entry matches a real source passage. Keyword occurrence is **not** evidence for a historical, psychological, spiritual or medical claim.
 
 ## Roadmap
 

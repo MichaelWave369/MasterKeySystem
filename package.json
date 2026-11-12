@@ -8,10 +8,11 @@
     "build": "vite build && node scripts/create-offline-worker.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "check:content": "node scripts/check-content.mjs",
-    "test": "npm run check:content && npm run test:backup",
+    "test": "npm run check:content && npm run test:backup && npm run test:concepts",
     "test:browser": "playwright test",
     "preview:pages": "node scripts/serve-pages-preview.mjs",
-    "test:backup": "node --test tests/backup.test.mjs"
+    "test:backup": "node --test tests/backup.test.mjs",
+    "test:concepts": "node --test tests/concepts.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

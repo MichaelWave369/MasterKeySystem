@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import lessons from "./data/lessons.json";
 import LibraryTools from "./components/LibraryTools.jsx";
+import ConceptAtlas from "./components/ConceptAtlas.jsx";
+import { splitPassages } from "./concepts.js";
 
 const TOTAL = lessons.length;
 const TABS = [
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
   { key: "practice", label: "Practice" },
+  { key: "atlas", label: "Concept Atlas" },
   { key: "notes", label: "My notes" },
 ];
 
@@ -26,13 +29,15 @@ function useStored(key, initial) {
 }
 
 function hashWeek() {
-  const match = window.location.hash.match(/^#week-(\d{1,2})$/);
+  const match = window.location.hash.match(/^#week-(\d{1,2})(?:-p-(\d+))?$/);
   const value = match ? Number(match[1]) : 1;
   return value >= 1 && value <= TOTAL ? value : 1;
 }
 
-function paragraphs(source) {
-  return source.split(/\n\s*\n/g).map(block => block.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean);
+function hashPassage() {
+  const match = window.location.hash.match(/^#week-(\d{1,2})-p-(\d+)$/);
+  return match && Number(match[2]) >= 1 && Number.isSafeInteger(Number(match[2]))
+    ? Number(match[2]) : 0;
 }
 
 function studyQuestions(source) {
@@ -63,6 +68,7 @@ function pad(seconds) {
 export default function App() {
   const [week, setWeek] = useStored("mks.week.v1", hashWeek());
   const [tab, setTab] = useState("read");
+  const [activePassage, setActivePassage] = useState(hashPassage);
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
@@ -90,17 +96,45 @@ export default function App() {
   function chooseWeek(next) {
     const safe = Math.max(1, Math.min(TOTAL, Number(next)));
     setWeek(safe);
+    setActivePassage(0);
     setTab("read");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + safe);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function openPassage(targetWeek, passage) {
+    if (!Number.isInteger(targetWeek) || targetWeek < 1 || targetWeek > TOTAL ||
+        !Number.isInteger(passage) || passage < 1 ||
+        passage > splitPassages(lessons[targetWeek - 1].reading).length) return;
+    setWeek(targetWeek);
+    setActivePassage(passage);
+    setTab("read");
+    setShowAbout(false);
+    window.history.replaceState(null, "", "#week-" + targetWeek + "-p-" + passage);
+  }
+
   useEffect(() => {
-    const update = () => setWeek(hashWeek());
+    const update = () => {
+      setWeek(hashWeek());
+      setActivePassage(hashPassage());
+      setTab("read");
+      setShowAbout(false);
+    };
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, [setWeek]);
+
+  useEffect(() => {
+    if (tab !== "read" || showAbout || !activePassage) return;
+    const handle = window.requestAnimationFrame(() => {
+      const passage = document.getElementById("source-passage-" + activePassage);
+      if (!passage) return;
+      passage.scrollIntoView({ behavior: "smooth", block: "center" });
+      passage.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(handle);
+  }, [tab, week, activePassage, showAbout]);
 
   useEffect(() => {
     if (!running) return;
@@ -123,6 +157,7 @@ export default function App() {
     setNotes(backup.notes);
     setDone(backup.completed);
     setWeek(backup.week);
+    setActivePassage(0);
     setTab("notes");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + backup.week);
@@ -194,7 +229,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -231,7 +266,12 @@ export default function App() {
                 <h2>The original lesson</h2>
                 <p className="source-note">Historical text reproduced for study. Claims reflect the author's views, not established scientific findings.</p>
                 <article className="source-text">
-                  {paragraphs(current.reading).map((block, index) => <p key={index}>{block}</p>)}
+                  {splitPassages(current.reading).map((block, index) => (
+                    <p key={index} id={"source-passage-" + (index + 1)}
+                      tabIndex={-1} className={activePassage === index + 1 ? "passage-active" : undefined}>
+                      {block}
+                    </p>
+                  ))}
                 </article>
               </section>
             )}
@@ -277,6 +317,10 @@ export default function App() {
                   : <p className="source-note">No exercise passage was automatically identified. Read the conclusion of the full original lesson for the author's precise directions.</p>}
                 <p className="source-note">If practicing stillness or concentration causes discomfort, stop or adjust the exercise. The historical text is for education, not medical treatment.</p>
               </section>
+            )}
+
+            {tab === "atlas" && (
+              <ConceptAtlas currentWeek={current.week} onOpenPassage={openPassage} />
             )}
 
             {tab === "notes" && (
