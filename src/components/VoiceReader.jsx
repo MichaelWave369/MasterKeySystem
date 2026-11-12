@@ -174,7 +174,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
           <div className="voice-settings">
             <label htmlFor="reader-voice">
               Voice
-              <select id="reader-voice" value={voices.some(v => v.voiceURI === voiceURI) ? voiceURI : "default"}
+              <select id="reader-voice" aria-label="Voice" value={voices.some(v => v.voiceURI === voiceURI) ? voiceURI : "default"}
                 disabled={status === "playing" || status === "paused"}
                 onChange={event => setVoiceURI(event.target.value)}>
                 <option value="default">Device default voice</option>
@@ -187,7 +187,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
             </label>
             <label htmlFor="reader-speed">
               Speed
-              <select id="reader-speed" value={String(speed)}
+              <select id="reader-speed" aria-label="Speed" value={String(speed)}
                 disabled={status === "playing" || status === "paused"}
                 onChange={event => setSpeed(Number(event.target.value))}>
                 {SPEEDS.map(value => <option value={String(value)} key={value}>{value}×</option>)}
@@ -195,7 +195,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
             </label>
             <label htmlFor="reader-start">
               Start at passage
-              <select id="reader-start" value={String(position + 1)}
+              <select id="reader-start" aria-label="Start at passage" value={String(position + 1)}
                 onChange={event => seek(Number(event.target.value) - 1)}>
                 {passages.map((_, index) => (
                   <option key={index} value={String(index + 1)}>Passage {index + 1}</option>
