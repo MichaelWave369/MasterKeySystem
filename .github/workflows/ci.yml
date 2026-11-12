@@ -21,6 +21,8 @@ jobs:
         run: npm run check:content
       - name: Test study backup data validation
         run: npm run test:backup
+      - name: Validate source-linked concept references
+        run: npm run test:concepts
       - name: Build app for GitHub Pages subpath
         run: npm run build
         env:

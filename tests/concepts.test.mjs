@@ -29,7 +29,7 @@ test("every linked passage resolves to its original text and matching keyword", 
 });
 
 test("passage splitting preserves all reading content in order", () => {
-  const source = "One\\nline\\n\\nTwo\\nlines\\n\\nThree.";
+  const source = "One\nline\n\nTwo\nlines\n\nThree.";
   assert.deepEqual(splitPassages(source), ["One line", "Two lines", "Three."]);
   assert.ok(splitPassages(lessons[0].reading).length > 15);
 });

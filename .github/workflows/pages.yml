@@ -38,6 +38,9 @@ jobs:
       - name: Test study backup validation
         run: npm run test:backup
 
+      - name: Validate source-linked concept references
+        run: npm run test:concepts
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages

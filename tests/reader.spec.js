@@ -66,3 +66,26 @@ test("book stays readable offline after the first successful visit", async ({ pa
   await expect(page.getByRole("heading", { name: "The Conscious and Subconscious", exact: true })).toBeVisible();
   await context.setOffline(false);
 });
+
+
+test("concept atlas links a literal source match to a reloadable passage", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Concept Atlas" }).click();
+  await expect(page.getByRole("heading", { name: "Explore concepts across the book" })).toBeVisible();
+  await page.getByRole("button", { name: /Universal Mind.*matching passages/ }).click();
+
+  const first = page.locator(".atlas-hit").first();
+  await expect(first.locator("blockquote")).not.toBeEmpty();
+  await first.getByRole("button", { name: "Open original passage" }).click();
+
+  await expect(page.getByRole("tab", { name: "Original lesson" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".source-text .passage-active")).toBeVisible();
+  await expect(page).toHaveURL(/#week-\d+-p-\d+$/);
+  const url = page.url();
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page).toHaveURL(url);
+  await expect(page.locator(".source-text .passage-active")).toBeVisible();
+  expect(errors).toEqual([]);
+});
