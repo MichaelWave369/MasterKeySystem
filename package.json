@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "check:content": "node scripts/check-content.mjs",
     "test": "npm run check:content",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "preview:pages": "node scripts/serve-pages-preview.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
