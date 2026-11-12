@@ -137,3 +137,31 @@ button:disabled { opacity: .35; cursor: not-allowed; }
   .question-item summary { padding: 14px; gap: 9px; }
   .question-answer { padding-left: 23px; }
 }
+
+/* Library controls, backup feedback, adjustable reader size */
+.library-utilities { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; flex-wrap: wrap; }
+.utility-buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.utility-button { border: 1px solid #566153; background: #20302b; border-radius: 7px; color: #eee3ce; padding: 9px 13px; font-size: 12px; }
+.utility-button:hover { background: #30443a; }
+.utility-button[aria-pressed="true"] { border-color: #c9ac78; background: #504b36; color: #f6e9c7; }
+.file-import { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.utility-status { color: #d6c18e; font-size: 12px; margin: 0; min-height: 1em; max-width: 450px; line-height: 1.4; }
+.reader-large .source-text p { font-size: clamp(20px, 2vw, 23px); line-height: 1.95; }
+@media (max-width: 760px) {
+  .library-utilities { padding: 11px 0; }
+  .utility-button { font-size: 11px; padding: 9px 10px; }
+}
+@media print {
+  :root, body, .main-content { background: #fff !important; color: #161616 !important; }
+  .app-shell { display: block !important; }
+  .sidebar, .top-bar, .library-utilities, .tabs, .lesson-footer, .site-footer, .orbit-art { display: none !important; }
+  .main-content { padding: 0 !important; }
+  .hero { min-height: 0; padding: 0 0 16px; }
+  .hero h1, .hero p, .hero-meta, .section-kicker { color: #111 !important; }
+  .reader-card { border: none; padding: 0; background: #fff !important; }
+  .reader-card h2, .reader-card h3, .source-text p, .source-note, .card-top, .source-tag { color: #111 !important; }
+  .source-text { max-width: none; margin-top: 10px; }
+  .source-text p { font-size: 11pt !important; line-height: 1.6 !important; margin: 0 0 12px; }
+  .source-text p, blockquote { break-inside: avoid; }
+  .reader-card { box-shadow: none !important; }
+}

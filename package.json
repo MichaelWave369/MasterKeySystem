@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "vite build && node scripts/create-offline-worker.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "check:content": "node scripts/check-content.mjs",
-    "test": "npm run check:content",
+    "test": "npm run check:content && npm run test:backup",
     "test:browser": "playwright test",
-    "preview:pages": "node scripts/serve-pages-preview.mjs"
+    "preview:pages": "node scripts/serve-pages-preview.mjs",
+    "test:backup": "node --test tests/backup.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
