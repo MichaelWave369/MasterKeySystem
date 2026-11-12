@@ -185,7 +185,7 @@ export default function App() {
               <p>The book contains philosophical, spiritual, psychological, and medical claims from its period. Including a claim in this library does not mean modern science has validated it. Meditation, concentration, and visualization are not substitutes for professional medical care.</p>
               <h2>Rights & privacy</h2>
               <p>The early twentieth-century original is in the U.S. public domain. The React application code is offered under MIT terms. Check local laws before distributing source text outside the United States. Notes and progress are kept only in your browser's local storage. There is no account or data collection service.</p>
-              <p><a href="https://www.gutenberg.org/ebooks/30508" target="_blank" rel="noreferrer">Browse a free public-domain edition of Haanel's work ↗</a></p>
+              <p><a href="https://sacred-texts.com/nth/mks/mks00.htm" target="_blank" rel="noreferrer">Browse a free public-domain edition of Haanel's work ↗</a></p>
             </div>
             <button className="primary-button" type="button" onClick={() => setShowAbout(false)}>Back to the lessons</button>
           </section>
