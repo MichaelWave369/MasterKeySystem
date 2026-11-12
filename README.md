@@ -42,6 +42,27 @@ The original text is **historical material, not scientific validation**. It incl
 
 A further public-domain edition is available at [Internet Sacred Text Archive](https://sacred-texts.com/nth/mks/mks00.htm).
 
+
+## GitHub Pages deployment
+
+The public React app is configured for the project URL:
+
+**https://michaelwave369.github.io/MasterKeySystem/**
+
+1. Open [the repository's Pages settings](https://github.com/MichaelWave369/MasterKeySystem/settings/pages).
+2. Under **Build and deployment → Source**, select **GitHub Actions**. This one-time repository setting is required to activate Pages.
+3. The [Publish React app to GitHub Pages](https://github.com/MichaelWave369/MasterKeySystem/actions/workflows/pages.yml) workflow deploys the compiled `dist/` contents automatically on every push to `main`. It can also be started manually with **Run workflow**.
+4. Wait until the workflow's **Publish site** job is green before treating the URL above as live.
+
+The Vite `base` is set to `/MasterKeySystem/` only for GitHub Pages builds, preserving the root base for local development or other hosts such as Netlify.
+
+For a command-line preview of the same build, run:
+
+~~~bash
+DEPLOY_TARGET=github-pages npm run build
+npm run preview
+~~~
+
 ## Roadmap
 
 - Compare source text line-by-line with an independent historical edition
