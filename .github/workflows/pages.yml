@@ -40,6 +40,12 @@ jobs:
           DEPLOY_TARGET: github-pages
         run: npm run build
 
+      - name: Install Chromium for live-render smoke test
+        run: npx playwright install --with-deps chromium
+
+      - name: Ensure React renders before publishing
+        run: npm run test:browser
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
