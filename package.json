@@ -8,13 +8,16 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check:content": "node scripts/check-content.mjs",
-    "test": "npm run check:content"
+    "test": "npm run check:content",
+    "test:browser": "playwright test",
+    "preview:pages": "node scripts/serve-pages-preview.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "vite": "^6.1.0"
+    "vite": "^6.1.0",
+    "@playwright/test": "^1.56.0"
   }
 }

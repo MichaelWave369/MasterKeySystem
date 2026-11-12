@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import lessons from "./data/lessons.json";
 
 const TOTAL = lessons.length;

@@ -19,5 +19,11 @@ jobs:
         run: npm install
       - name: Validate original lesson corpus
         run: npm run check:content
-      - name: Build app
+      - name: Build app for GitHub Pages subpath
         run: npm run build
+        env:
+          DEPLOY_TARGET: github-pages
+      - name: Install Chromium for runtime smoke test
+        run: npx playwright install --with-deps chromium
+      - name: Verify React actually renders and navigation works
+        run: npm run test:browser
