@@ -128,7 +128,14 @@ test("voice reader speaks exact passages with voice, rate, pause, skip and stop"
   await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
 
   await expect(page.getByRole("heading", { name: "Listen to this lesson" })).toBeVisible();
-  await page.getByLabel("Voice", { exact: true }).selectOption("test-voice");
+  console.log("VOICE DEBUG", JSON.stringify(await page.evaluate(() => ({
+    type: typeof window.SpeechSynthesisUtterance,
+    available: Boolean(window.speechSynthesis),
+    voices: window.speechSynthesis?.getVoices?.().map(voice => voice.voiceURI),
+    html: document.querySelector(".voice-reader")?.innerText.slice(0, 350),
+    options: Array.from(document.querySelectorAll("#reader-voice option")).map(option => option.value),
+  }))));
+  await page.locator("#reader-voice").selectOption("test-voice", { timeout: 7000 });
   await page.getByLabel("Speed").selectOption("1.3");
   await page.getByRole("button", { name: "Play lesson" }).click();
 
