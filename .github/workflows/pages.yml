@@ -41,6 +41,9 @@ jobs:
       - name: Validate source-linked concept references
         run: npm run test:concepts
 
+      - name: Verify narration text chunking
+        run: npm run test:speech
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages

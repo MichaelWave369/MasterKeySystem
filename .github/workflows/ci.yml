@@ -23,6 +23,9 @@ jobs:
         run: npm run test:backup
       - name: Validate source-linked concept references
         run: npm run test:concepts
+      - name: Verify narration text chunking
+        run: npm run test:speech
+
       - name: Build app for GitHub Pages subpath
         run: npm run build
         env:

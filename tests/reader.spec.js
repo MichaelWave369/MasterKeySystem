@@ -89,3 +89,89 @@ test("concept atlas links a literal source match to a reloadable passage", async
   await expect(page.locator(".source-text .passage-active")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+
+test("voice reader speaks exact passages with voice, rate, pause, skip and stop", async ({ page }) => {
+  await page.addInitScript(() => {
+    class FakeUtterance {
+      constructor(text) { this.text = text; this.rate = 1; this.pitch = 1; }
+    }
+    const synth = {
+      current: null,
+      paused: false,
+      addEventListener() {},
+      removeEventListener() {},
+      getVoices() {
+        return [{ voiceURI: "test-voice", name: "Test Reader", lang: "en-US", localService: true }];
+      },
+      speak(utterance) {
+        this.current = utterance;
+        window.__spoken.push({ text: utterance.text, rate: utterance.rate, voice: utterance.voice?.name });
+      },
+      cancel() { this.current = null; window.__speechCancels++; },
+      pause() { this.paused = true; },
+      resume() { this.paused = false; },
+    };
+    window.__spoken = [];
+    window.__speechCancels = 0;
+    window.__speechNext = () => {
+      const current = synth.current;
+      synth.current = null;
+      current?.onend?.();
+    };
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synth });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: FakeUtterance });
+  });
+
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+
+  await expect(page.getByRole("heading", { name: "Listen to this lesson" })).toBeVisible();
+  await page.getByLabel("Voice", { exact: true }).selectOption("test-voice");
+  await page.getByLabel("Speed").selectOption("1.3");
+  await page.getByRole("button", { name: "Play lesson" }).click();
+
+  await expect(page.locator(".source-text .passage-speaking")).toHaveCount(1);
+  await expect(page.locator(".voice-progress")).toContainText("Reading passage 1");
+  const original = await page.locator(".source-text p").first().innerText();
+  const first = await page.evaluate(() => window.__spoken[0]);
+  expect(original.startsWith(first.text)).toBe(true);
+  expect(first.rate).toBe(1.3);
+  expect(first.voice).toBe("Test Reader");
+
+  await page.getByRole("button", { name: "Pause narration" }).click();
+  await expect(page.getByRole("button", { name: "Resume narration" })).toBeVisible();
+  expect(await page.evaluate(() => window.speechSynthesis.paused)).toBe(true);
+  await page.getByRole("button", { name: "Resume narration" }).click();
+  expect(await page.evaluate(() => window.speechSynthesis.paused)).toBe(false);
+
+  await page.getByRole("button", { name: "Next passage" }).click();
+  await expect(page.locator(".voice-progress")).toContainText("Reading passage 2");
+  await expect(page.locator("#source-passage-2")).toHaveClass(/passage-speaking/);
+  const second = await page.locator("#source-passage-2").innerText();
+  const spoken = await page.evaluate(() => window.__spoken.at(-1).text);
+  expect(second.startsWith(spoken)).toBe(true);
+
+  await page.getByRole("button", { name: "Stop narration" }).click();
+  await expect(page.locator(".source-text .passage-speaking")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play lesson" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Play lesson" }).click();
+  const count = await page.evaluate(() => window.__speechCancels);
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await expect(page.getByRole("heading", { name: "The Conscious and Subconscious", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.__speechCancels)).toBeGreaterThan(count);
+  await expect(page.locator(".source-text .passage-speaking")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("voice reader explains unavailable text-to-speech without hiding source", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: undefined });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: undefined });
+  });
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await expect(page.locator(".voice-reader [role='status']")).toContainText("isn't available");
+  await expect(page.locator(".source-text")).toContainText("That much gathers more");
+});
