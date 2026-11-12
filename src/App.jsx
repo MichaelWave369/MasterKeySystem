@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import lessons from "./data/lessons.json";
+import LibraryTools from "./components/LibraryTools.jsx";
 
 const TOTAL = lessons.length;
 const TABS = [
@@ -64,6 +65,7 @@ export default function App() {
   const [tab, setTab] = useState("read");
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
+  const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
   const [query, setQuery] = useState("");
   const [showAbout, setShowAbout] = useState(false);
   const [duration, setDuration] = useState(15);
@@ -117,6 +119,15 @@ export default function App() {
     setRunning(false);
   }
 
+  function restoreStudy(backup) {
+    setNotes(backup.notes);
+    setDone(backup.completed);
+    setWeek(backup.week);
+    setTab("notes");
+    setShowAbout(false);
+    window.history.replaceState(null, "", "#week-" + backup.week);
+  }
+
   function toggleComplete() {
     setDone(previous => complete
       ? previous.filter(value => value !== current.week)
@@ -165,11 +176,16 @@ export default function App() {
         </button>
       </aside>
 
-      <main className="main-content">
+      <main className={"main-content" + (readerSize === "large" ? " reader-large" : "")}>
         <header className="top-bar">
           <span className="eyebrow">AN OPEN STUDY COMPANION</span>
           <span className="public-domain">PUBLIC-DOMAIN SOURCE TEXT</span>
         </header>
+        <LibraryTools
+          notes={notes} completed={done} week={current.week}
+          readerSize={readerSize} onReaderSizeChange={setReaderSize}
+          onRestore={restoreStudy}
+        />
 
         {showAbout ? (
           <section className="about-view">
@@ -178,7 +194,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, a private note space, optional progress tracking, searchable passages, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -270,7 +286,7 @@ export default function App() {
                 <p className="source-note">Record what resonates, what you question, and what you want to investigate. Notes are stored locally, not sent to a server.</p>
                 <label className="notes-label" htmlFor="lesson-notes">NOTES FOR WEEK {current.week}</label>
                 <textarea id="lesson-notes" className="notes-area" value={notes[current.week] || ""} onChange={event => setNotes(previous => ({ ...previous, [current.week]: event.target.value }))} placeholder="What did you notice? What claims deserve a closer look?" rows={12} />
-                <p className="source-note">Browser storage can be cleared. Copy important notes elsewhere to back them up.</p>
+                <p className="source-note">Browser storage can be cleared. Use Export backup above to save your notes and completed lessons as a local JSON file.</p>
               </section>
             )}
 

@@ -10,7 +10,9 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
 - Optional concentration timer with source-based practice excerpts
-- Private per-week notes stored in your browser's local storage
+- Private per-week notes stored in your browser's local storage, with JSON backup import/export
+- Offline reading after the first successful visit (all original lesson text is bundled)
+- Print-friendly lessons and adjustable reading text size
 - Mobile-friendly design, accessible controls, and Netlify-ready deployment
 - Automated checks validating the number of lessons and questions
 
@@ -56,18 +58,22 @@ The public React app is configured for the project URL:
 
 The Vite `base` is set to `/MasterKeySystem/` only for GitHub Pages builds, preserving the root base for local development or other hosts such as Netlify.
 
+Offline reading: the app registers a service worker in production, storing the built HTML, scripts, styles, manifest, and the bundled 24-part corpus on the first online visit. After the service worker activates, the study reader and local notes work with the network disconnected. New builds use a content-derived cache key to replace stale site files. Public source links outside the app still need a connection.
+
+Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
+
 For a command-line preview of the same build, run:
 
 ~~~bash
 DEPLOY_TARGET=github-pages npm run build
-npm run preview
+npm run preview:pages
 ~~~
 
 ## Roadmap
 
 - Compare source text line-by-line with an independent historical edition
-- Add export/import of private notes
-- Add print mode and a downloadable offline PWA
+- Validate offline installation and long-term cache updates across browsers
+- Add optional note exports in plain text and accessible install prompts
 - Add optional evidence annotations clearly separated from Haanel's text
 - Optional integration into PhiOS and FocusBridge21 without making them dependencies
 

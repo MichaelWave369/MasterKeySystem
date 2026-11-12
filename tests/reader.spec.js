@@ -30,3 +30,39 @@ test("GitHub Pages build mounts React and navigates through lessons", async ({ p
 
   expect(runtimeErrors, "no uncaught React or JavaScript exceptions").toEqual([]);
 });
+
+
+test("notes backup is downloadable and restores completed lessons", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "My notes" }).click();
+  await page.getByLabel("NOTES FOR WEEK 1").fill("My private reflection on stillness");
+  await page.getByRole("button", { name: "Mark lesson complete" }).click();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export backup" }).click();
+  const download = await downloadPromise;
+  const exportFile = await download.path();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "My notes" }).click();
+  await expect(page.getByLabel("NOTES FOR WEEK 1")).toHaveValue("");
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator('input[type="file"]').setInputFiles(exportFile);
+  await expect(page.getByRole("status")).toContainText("Backup restored");
+  await expect(page.getByLabel("NOTES FOR WEEK 1")).toHaveValue("My private reflection on stillness");
+  await expect(page.getByRole("button", { name: "Lesson completed" })).toBeVisible();
+});
+
+test("book stays readable offline after the first successful visit", async ({ page, context }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller !== null, { timeout: 10000 });
+
+  await context.setOffline(true);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "The World Within", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await expect(page.getByRole("heading", { name: "The Conscious and Subconscious", exact: true })).toBeVisible();
+  await context.setOffline(false);
+});

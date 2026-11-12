@@ -37,3 +37,13 @@ createRoot(document.getElementById("root")).render(
     </AppErrorBoundary>
   </React.StrictMode>
 );
+
+// The Vite output is versioned and precached during production builds. Offline
+// reading becomes available after the first successful visit with a connection.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(import.meta.env.BASE_URL + "sw.js", {
+      scope: import.meta.env.BASE_URL,
+    }).catch(error => console.warn("Offline reading unavailable:", error));
+  });
+}

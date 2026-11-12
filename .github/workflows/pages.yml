@@ -35,6 +35,9 @@ jobs:
       - name: Validate all 24 lessons and 240 questions
         run: npm run check:content
 
+      - name: Test study backup validation
+        run: npm run test:backup
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages
