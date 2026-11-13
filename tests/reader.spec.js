@@ -454,3 +454,62 @@ test("dashboard updates from actual reading, journal, notes and recall actions",
   await expect(page.getByTestId("metric-practice")).toContainText("1");
   await expect(page.getByTestId("metric-new")).toContainText("239");
 });
+
+
+test("full-book search links literal results to highlighted original passages", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Book search" }).click();
+  await expect(page.getByRole("heading", { name: "Search the complete book" })).toBeVisible();
+  await page.getByLabel("WORD OR PHRASE").fill("world within");
+  await expect(page.locator(".search-result-count")).toContainText("matching source locations");
+  await expect(page.locator(".search-hit").first().locator("mark")).toContainText(/world within/i);
+
+  await page.getByRole("button", { name: "Lesson passages" }).click();
+  await expect(page.locator(".search-hit")).not.toContainText("PRINTED STUDY QUESTION");
+  await page.locator(".search-hit").first()
+    .getByRole("button", { name: "Open original passage" }).click();
+  await expect(page).toHaveURL(/#week-\d+-p-\d+$/);
+  await expect(page.getByRole("tab", { name: "Original lesson" }))
+    .toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".source-text .passage-active mark")).toContainText(/world within/i);
+
+  const url = page.url();
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page).toHaveURL(url);
+  await expect(page.locator(".source-text .passage-active")).toContainText(/world within/i);
+  expect(errors).toEqual([]);
+});
+
+test("search printed questions and answers via exact reloadable source links", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Book search" }).click();
+  await page.getByLabel("WORD OR PHRASE").fill("two modes of mental activity");
+  await page.getByRole("button", { name: "Study questions & answers" }).click();
+  await expect(page.locator(".search-hit")).toHaveCount(1);
+  await expect(page.locator(".search-hit")).toContainText("PRINTED STUDY QUESTION 11");
+  await page.getByRole("button", { name: "Open printed question" }).click();
+  await expect(page).toHaveURL(/#week-2-q-1$/);
+  await expect(page.getByRole("tab", { name: "Study questions" }))
+    .toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".question-target")).toHaveAttribute("open", "");
+  await expect(page.locator(".question-target mark")).toContainText(/two modes of mental activity/i);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("#source-question-1")).toHaveAttribute("open", "");
+  await expect(page.locator("#source-question-1")).toContainText("What are the two modes of mental activity?");
+});
+
+test("sidebar search opens precise results and treats regex punctuation as literal", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByLabel("FIND A LESSON OR PASSAGE").fill("concentration");
+  await page.getByRole("button", { name: "View exact source matches" }).click();
+  await expect(page.getByRole("tab", { name: "Book search" }))
+    .toHaveAttribute("aria-selected", "true");
+  await expect(page.getByLabel("WORD OR PHRASE")).toHaveValue("concentration");
+  await expect(page.locator(".search-hit").first()).toBeVisible();
+
+  await page.getByLabel("WORD OR PHRASE").fill(".*(");
+  await expect(page.locator(".search-result-count")).toContainText("0 matching source locations");
+  await expect(page.getByText("No literal matches.")).toBeVisible();
+});
