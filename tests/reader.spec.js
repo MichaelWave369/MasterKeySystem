@@ -513,3 +513,70 @@ test("sidebar search opens precise results and treats regex punctuation as liter
   await expect(page.locator(".search-result-count")).toContainText("0 matching source locations");
   await expect(page.getByText("No literal matches.")).toBeVisible();
 });
+
+
+test("saved passage and personal note survive reload and study backup restore", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Save passage 9", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Unsave passage 9", exact: true }))
+    .toHaveAttribute("aria-pressed", "true");
+
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.getByRole("heading", { name: "Your saved sources" })).toBeVisible();
+  await expect(page.locator(".saved-entry")).toHaveCount(1);
+  await expect(page.getByTestId("saved-p-1-9")).toContainText("WEEK 1 · ORIGINAL PASSAGE 9");
+  await page.getByRole("textbox", { name: "Personal note for Week 1 passage 9" })
+    .fill("I want to compare this original passage with later thinkers.");
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.getByRole("textbox", { name: "Personal note for Week 1 passage 9" }))
+    .toHaveValue("I want to compare this original passage with later thinkers.");
+
+  const downloadReady = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export backup" }).click();
+  const downloaded = await downloadReady;
+  const backupFile = await downloaded.path();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.locator(".saved-entry")).toHaveCount(0);
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator('input[type="file"]').setInputFiles(backupFile);
+  await expect(page.getByRole("status")).toContainText("Backup restored");
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.getByRole("textbox", { name: "Personal note for Week 1 passage 9" }))
+    .toHaveValue("I want to compare this original passage with later thinkers.");
+
+  await page.getByRole("button", { name: "Open original passage" }).click();
+  await expect(page).toHaveURL(/#week-1-p-9$/);
+  await expect(page.locator("#source-passage-9")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("search results save printed study questions and shelf can reopen and remove them", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Book search" }).click();
+  await page.getByLabel("WORD OR PHRASE").fill("two modes of mental activity");
+  await page.getByRole("button", { name: "Study questions & answers" }).click();
+  await expect(page.locator(".search-hit")).toHaveCount(1);
+  await page.getByRole("button", { name: "Save source" }).click();
+  await expect(page.getByRole("button", { name: "✓ Saved" })).toHaveAttribute("aria-pressed", "true");
+
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.getByTestId("saved-q-2-1")).toContainText("PRINTED QUESTION 11");
+  await page.getByRole("textbox", { name: "Personal note for Week 2 question 1" })
+    .fill("Question to revisit.");
+  await page.getByRole("button", { name: "Open original question" }).click();
+  await expect(page).toHaveURL(/#week-2-q-1$/);
+  await expect(page.locator("#source-question-1")).toHaveAttribute("open", "");
+  await page.getByRole("tab", { name: "Saved sources" }).click();
+  await expect(page.getByRole("textbox", { name: "Personal note for Week 2 question 1" }))
+    .toHaveValue("Question to revisit.");
+  await page.getByRole("button", { name: "Remove saved question Week 2 position 1" }).click();
+  await expect(page.locator(".saved-entry")).toHaveCount(0);
+});

@@ -353,3 +353,27 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 .search-disclaimer { margin-top: 24px; }
 @media (max-width: 540px) { .search-hit { padding: 14px; } }
 @media print { .search-sidebar-link, .search-filters, .search-more, .search-hit button { display: none !important; } }
+
+
+/* Exact source references + private note shelf */
+.reader-source-row { border-bottom: 1px solid rgba(117, 135, 116, .12); padding-bottom: 10px; margin-bottom: 10px; }
+.reader-source-row > p { margin-bottom: 6px; }
+.save-source-action { background: transparent; border: 1px solid #6f7f63; border-radius: 7px; color: #dec58f; padding: 7px 10px; font-size: 11px; margin: 0 0 12px; }
+.save-source-action:hover, .save-source-action:focus-visible { background: #374838; }
+.save-source-action[aria-pressed="true"] { background: #344737; border-color: #c9aa75; color: #efdcae; }
+.save-source-action:disabled { opacity: .5; cursor: not-allowed; }
+.question-item > .save-source-action { margin: 4px 16px 14px; }
+.search-save-action { margin-left: 12px; }
+.saved-entries { display: grid; gap: 17px; margin: 20px 0; }
+.saved-entry { border: 1px solid #536852; padding: 21px; border-radius: 12px; background: #1d302a; }
+.saved-entry-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; }
+.saved-entry-date { color: #c4cfc1; font-size: 11px; }
+.saved-entry h3, .saved-empty h3 { font-family: Georgia, serif; color: #f1e6d4; font-size: 22px; margin: 15px 0; }
+.saved-entry blockquote { margin: 0 0 23px; border-left: 3px solid #d1b17d; padding-left: 16px; font-family: Georgia, serif; font-size: 16px; line-height: 1.8; color: #e4eadd; overflow-wrap: anywhere; }
+.saved-question-original { margin: 0 0 22px; line-height: 1.7; font-family: Georgia, serif; color: #e4eadd; }
+.saved-note { margin: 9px 0 16px; }
+.saved-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-entry-actions button { font-size: 12px; }
+.saved-empty { border: 1px dashed #728066; padding: 22px; border-radius: 12px; margin: 21px 0; color: #d4dfcf; line-height: 1.6; }
+@media (max-width: 600px) { .saved-entry { padding: 15px; } .saved-entry-actions button { flex: 1; } }
+@media print { .save-source-action, .saved-entry-actions, .saved-note { display: none !important; } }

@@ -10,6 +10,7 @@ test("round-trips notes, progress, and selected week", () => {
     bookmarks: { 1: 12, 24: 6 },
     practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
     recallProgress: { "24:10": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
+    savedSources: [{ id: "p:1:5", note: "I want to research this.", savedAt: "2026-11-13T02:00:00.000Z" }],
   });
   assert.deepEqual(parseBackup(JSON.stringify(original)), {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },
@@ -18,6 +19,7 @@ test("round-trips notes, progress, and selected week", () => {
     bookmarks: { 1: 12, 24: 6 },
     practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
     recallProgress: { "24:10": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
+    savedSources: [{ id: "p:1:5", note: "I want to research this.", savedAt: "2026-11-13T02:00:00.000Z" }],
   });
 });
 
@@ -54,7 +56,7 @@ test("accepts earlier v1 backups without audio bookmarks", () => {
   const backup = createBackup({ notes: { 2: "Old note" }, completed: [2], week: 2 });
   delete backup.bookmarks;
   assert.deepEqual(parseBackup(JSON.stringify(backup)), {
-    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {}, practiceSessions: [], recallProgress: {},
+    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {}, practiceSessions: [], recallProgress: {}, savedSources: [],
   });
 });
 
@@ -107,4 +109,20 @@ test("rejects malformed recall keys, dates and record values", () => {
     assert.throws(() => parseBackup(JSON.stringify(original)), /Recall progress/);
   }
   assert.equal(Object.prototype.streak, undefined);
+});
+
+
+test("earlier backups remain importable without personal source references", () => {
+  const data = createBackup({ notes: {}, completed: [1], week: 1 });
+  delete data.savedSources;
+  assert.deepEqual(parseBackup(JSON.stringify(data)).savedSources, []);
+});
+
+test("source backup import validates duplicates and private note bounds", () => {
+  const data = createBackup({ notes: {}, completed: [], week: 1 });
+  const at = "2026-11-13T02:00:00.000Z";
+  data.savedSources = [{ id: "q:25:1", note: "", savedAt: at }];
+  assert.throws(() => parseBackup(JSON.stringify(data)), /saved source/);
+  data.savedSources = [{ id: "p:1:1", note: "a".repeat(2001), savedAt: at }];
+  assert.throws(() => parseBackup(JSON.stringify(data)), /saved source/);
 });

@@ -7,6 +7,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - All **24 original parts** reproduced from the project founder's 156-page PDF
 - All **240 printed study questions and answers**
 - **Exact full-book source search** across lesson passages and all 240 printed study questions/answers, with literal highlighting and deep links to the original
+- **Saved sources shelf:** save original passages and study questions, attach separate private notes, copy source links, and export everything with your study backup
 - **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, passage highlighting, saved listening positions, and optional keyboard shortcuts
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
@@ -72,6 +73,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Private saved-source shelf
+
+Use **Save passage** in the original reader, **Save question** on a printed study question, or **Save source** on a full-book search result. The optional **Saved sources** tab collects these bookmarks from across the 24 lessons, keeping **your own annotations clearly separate** from the historical text. Each reference resolves against the immutable source corpus, so the source text itself is never altered or duplicated into a private journal field. Open the original from any shelf item, or copy a public source-location link without sharing your personal note.
+
+The shelf is browser-local, requires no account or remote storage, and supports up to 200 references with 2,000 characters of private notes per item. It is part of the existing JSON backup and its import validation. Backups created before this optional field existed remain compatible. Clearing browser storage will remove the local shelf unless you export it first.
 
 ## Exact source search
 

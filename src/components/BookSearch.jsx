@@ -6,7 +6,7 @@ import HighlightedText from "./HighlightedText.jsx";
 const INDEX = buildBookIndex(lessons);
 const PAGE_SIZE = 30;
 
-export default function BookSearch({ query, onQueryChange, onOpenReading, onOpenQuestion }) {
+export default function BookSearch({ query, onQueryChange, onOpenReading, onOpenQuestion, savedIds = [], onToggleSave }) {
   const [scope, setScope] = useState("all");
   const [limit, setLimit] = useState(PAGE_SIZE);
   const clean = normalizeSearchTerm(query);
@@ -71,6 +71,12 @@ export default function BookSearch({ query, onQueryChange, onOpenReading, onOpen
                     ? onOpenReading(hit.week, hit.position, clean)
                     : onOpenQuestion(hit.week, hit.position, clean)}>
                   {hit.kind === "reading" ? "Open original passage" : "Open printed question"}
+                </button>
+                <button type="button" className="save-source-action search-save-action"
+                  aria-pressed={savedIds.includes(hit.key)}
+                  disabled={savedIds.length >= 200 && !savedIds.includes(hit.key)}
+                  onClick={() => onToggleSave(hit.key)}>
+                  {savedIds.includes(hit.key) ? "✓ Saved" : "＋ Save source"}
                 </button>
               </article>
             ))}

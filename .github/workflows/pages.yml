@@ -56,6 +56,9 @@ jobs:
       - name: Verify exact source search and passage links
         run: npm run test:search
 
+      - name: Verify private saved-source references and notes
+        run: npm run test:shelf
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages
