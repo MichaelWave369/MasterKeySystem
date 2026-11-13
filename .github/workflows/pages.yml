@@ -78,6 +78,12 @@ jobs:
         with:
           path: ./dist
 
+      # Pages artifact metadata can be briefly unavailable immediately after
+      # upload. A fresh run plus this brief propagation window prevents a
+      # transient "No artifacts named github-pages" error in deploy-pages.
+      - name: Allow Pages artifact metadata to propagate
+        run: sleep 15
+
       - name: Publish site
         id: deployment
         uses: actions/deploy-pages@v4
