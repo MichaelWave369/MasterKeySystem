@@ -7,11 +7,13 @@ test("round-trips notes, progress, and selected week", () => {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },
     completed: [3, 1, 3],
     week: 24,
+    bookmarks: { 1: 12, 24: 6 },
   });
   assert.deepEqual(parseBackup(JSON.stringify(original)), {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },
     completed: [1, 3],
     week: 24,
+    bookmarks: { 1: 12, 24: 6 },
   });
 });
 
@@ -41,4 +43,24 @@ test("limits oversized backups and notes", () => {
   assert.throws(() => parseBackup("x".repeat(1024 * 1024 + 1)), /1 MB/);
   payload.notes = { 2: "a".repeat(50001) };
   assert.throws(() => parseBackup(JSON.stringify(payload)), /too long/);
+});
+
+
+test("accepts earlier v1 backups without audio bookmarks", () => {
+  const backup = createBackup({ notes: { 2: "Old note" }, completed: [2], week: 2 });
+  delete backup.bookmarks;
+  assert.deepEqual(parseBackup(JSON.stringify(backup)), {
+    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {},
+  });
+});
+
+test("rejects invalid listening bookmarks and prototype keys", () => {
+  const backup = createBackup({ notes: {}, completed: [], week: 1, bookmarks: { 1: 5 } });
+  backup.bookmarks = { 25: 2 };
+  assert.throws(() => parseBackup(JSON.stringify(backup)), /listening bookmark/);
+  backup.bookmarks = { 1: -3 };
+  assert.throws(() => parseBackup(JSON.stringify(backup)), /listening bookmark/);
+  backup.bookmarks = JSON.parse('{"__proto__":12}');
+  assert.throws(() => parseBackup(JSON.stringify(backup)), /listening bookmark/);
+  assert.equal(Object.prototype.polluted, undefined);
 });

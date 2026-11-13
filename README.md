@@ -7,7 +7,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - All **24 original parts** reproduced from the project founder's 156-page PDF
 - All **240 printed study questions and answers**
 - Search across the complete source text
-- **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, and passage highlighting
+- **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, passage highlighting, saved listening positions, and optional keyboard shortcuts
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
@@ -62,7 +62,7 @@ The Vite `base` is set to `/MasterKeySystem/` only for GitHub Pages builds, pres
 
 Offline reading: the app registers a service worker in production, storing the built HTML, scripts, styles, manifest, and the bundled 24-part corpus on the first online visit. After the service worker activates, the study reader and local notes work with the network disconnected. New builds use a content-derived cache key to replace stale site files. Public source links outside the app still need a connection.
 
-Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
+Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, per-lesson listening positions, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
 
 For a command-line preview of the same build, run:
 
@@ -73,7 +73,7 @@ npm run preview:pages
 
 ## Voice reader
 
-Open **Original lesson → Listen to this lesson**. The optional narration uses browser/device text-to-speech through the Web Speech API. It reads the historical source wording in short chunks (to avoid browser timeouts), highlighting and following each passage. Users can choose an available device voice, control speed, pause/resume, stop, and skip to a passage or move between passages.
+Open **Original lesson → Listen to this lesson**. The optional narration uses browser/device text-to-speech through the Web Speech API. It reads the historical source wording in short chunks (to avoid browser timeouts), highlighting and following each passage. Users can choose an available device voice, control speed, pause/resume, stop, and skip to a passage or move between passages. Each lesson remembers its last spoken or manually selected passage on this device. The voice reader resumes there when reopened and resets its bookmark after finishing a full lesson. Bookmarks are included in exported study backups; earlier backup files without bookmarks still import correctly. The user can optionally enable keyboard shortcuts: **Alt + Shift + P** to play/pause, **Alt + Shift + left/right arrow** to move between passages, and **Alt + Shift + S** to stop. Shortcuts ignore input fields and are off by default.
 
 **No keys, server API, or generated paraphrases are required.** Audio quality and voice options are determined by the user's browser and operating system. Some voices are installed locally and can work offline, while optional higher-quality system voices may fetch data from a vendor. This is text-to-speech, not a promise of a custom neural AI narrator. In browsers that don't support speech synthesis, the original text remains fully readable. The reader stops when its lesson view closes or the user navigates to another lesson.
 
