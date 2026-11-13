@@ -8,12 +8,14 @@ test("round-trips notes, progress, and selected week", () => {
     completed: [3, 1, 3],
     week: 24,
     bookmarks: { 1: 12, 24: 6 },
+    practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
   });
   assert.deepEqual(parseBackup(JSON.stringify(original)), {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },
     completed: [1, 3],
     week: 24,
     bookmarks: { 1: 12, 24: 6 },
+    practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
   });
 });
 
@@ -50,7 +52,7 @@ test("accepts earlier v1 backups without audio bookmarks", () => {
   const backup = createBackup({ notes: { 2: "Old note" }, completed: [2], week: 2 });
   delete backup.bookmarks;
   assert.deepEqual(parseBackup(JSON.stringify(backup)), {
-    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {},
+    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {}, practiceSessions: [],
   });
 });
 
@@ -63,4 +65,21 @@ test("rejects invalid listening bookmarks and prototype keys", () => {
   backup.bookmarks = JSON.parse('{"__proto__":12}');
   assert.throws(() => parseBackup(JSON.stringify(backup)), /listening bookmark/);
   assert.equal(Object.prototype.polluted, undefined);
+});
+
+
+test("imports older backups without a practice history", () => {
+  const original = createBackup({ notes: {}, completed: [5], bookmarks: {}, week: 5 });
+  delete original.practiceSessions;
+  assert.deepEqual(parseBackup(JSON.stringify(original)).practiceSessions, []);
+});
+
+test("rejects malformed, oversized, and unsafe practice history", () => {
+  const original = createBackup({ notes: {}, completed: [], week: 1 });
+  original.practiceSessions = [{ id: "ok", week: 25, at: "2026-11-12T12:30:00.000Z" }];
+  assert.throws(() => parseBackup(JSON.stringify(original)), /Practice history/);
+  original.practiceSessions = [{ id: "__proto__", week: 1, at: "invalid date" }];
+  assert.throws(() => parseBackup(JSON.stringify(original)), /Practice history/);
+  original.practiceSessions = Array.from({ length: 2001 }, () => ({ id: "ok", week: 1, at: "2026-11-12T12:30:00.000Z" }));
+  assert.throws(() => parseBackup(JSON.stringify(original)), /Practice history/);
 });

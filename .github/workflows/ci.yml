@@ -26,6 +26,9 @@ jobs:
       - name: Verify narration text chunking
         run: npm run test:speech
 
+      - name: Validate original weekly exercise links
+        run: npm run test:practice
+
       - name: Build app for GitHub Pages subpath
         run: npm run build
         env:

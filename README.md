@@ -11,7 +11,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
-- Optional concentration timer with source-based practice excerpts
+- Original source-linked exercise passages for every week, optional timer, and local practice journal
 - Private per-week notes stored in your browser's local storage, with JSON backup import/export
 - Offline reading after the first successful visit (all original lesson text is bundled)
 - Print-friendly lessons and adjustable reading text size
@@ -62,7 +62,7 @@ The Vite `base` is set to `/MasterKeySystem/` only for GitHub Pages builds, pres
 
 Offline reading: the app registers a service worker in production, storing the built HTML, scripts, styles, manifest, and the bundled 24-part corpus on the first online visit. After the service worker activates, the study reader and local notes work with the network disconnected. New builds use a content-derived cache key to replace stale site files. Public source links outside the app still need a connection.
 
-Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, per-lesson listening positions, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
+Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, per-lesson listening positions, practice history, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
 
 For a command-line preview of the same build, run:
 
@@ -70,6 +70,14 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Original weekly exercises and practice journal
+
+The **Practice** tab shows the exact original source passages identified as the weekly exercise in each of the 24 parts. An editorial heading identifies the activity, but no instructions are invented or rewritten as if they were from Haanel. Every original passage links to its exact position in the complete text. The previous loose keyword extractor has been replaced by 24 curated anchors, with automated checks that every quoted passage exactly matches the historic source transcription.
+
+The optional concentration timer is a modern study aid, not an original instruction. Readers can record a practice session or remove an entry whenever they choose; sessions are voluntary, ungraded, and stored only on this device. Practice history is included in JSON exports. Older version-1 backups without a practice history still import successfully.
+
+These passages contain historical philosophical, spiritual and sometimes medical claims that are **not** independently validated. Practice logs measure personal activity, not the correctness of these claims or any medical outcome.
 
 ## Voice reader
 
