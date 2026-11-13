@@ -38,7 +38,21 @@ function cleanBookmarks(raw) {
   }
   return clean;
 }
-export function createBackup({ notes, completed, week, bookmarks = {} }) {
+function cleanPracticeSessions(raw) {
+  if (!Array.isArray(raw) || raw.length > 2000)
+    throw new Error("Practice history must be a list with no more than 2000 entries.");
+  return raw.map(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item) ||
+        !validWeek(item.week) || typeof item.id !== "string" ||
+        !/^[a-zA-Z0-9_-]{1,80}$/.test(item.id) ||
+        typeof item.at !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(item.at) ||
+        Number.isNaN(Date.parse(item.at)))
+      throw new Error("Practice history contains an invalid entry.");
+    return { id: item.id, week: item.week, at: item.at };
+  });
+}
+export function createBackup({ notes, completed, week, bookmarks = {}, practiceSessions = [] }) {
   if (!validWeek(week)) throw new Error("Selected lesson is invalid.");
   return {
     format: FORMAT,
@@ -48,6 +62,7 @@ export function createBackup({ notes, completed, week, bookmarks = {} }) {
     notes: cleanNotes(notes),
     completed: cleanCompleted(completed),
     bookmarks: cleanBookmarks(bookmarks),
+    practiceSessions: cleanPracticeSessions(practiceSessions),
   };
 }
 export function parseBackup(text) {
@@ -67,5 +82,6 @@ export function parseBackup(text) {
     completed: cleanCompleted(backup.completed),
     // Version 1 exports before Audio Bookmarks did not include this optional field.
     bookmarks: cleanBookmarks(backup.bookmarks ?? {}),
+    practiceSessions: cleanPracticeSessions(backup.practiceSessions ?? []),
   };
 }

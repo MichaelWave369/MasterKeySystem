@@ -44,6 +44,9 @@ jobs:
       - name: Verify narration text chunking
         run: npm run test:speech
 
+      - name: Validate original weekly exercise links
+        run: npm run test:practice
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages

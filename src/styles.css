@@ -238,3 +238,24 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 @media print {
   .audio-study-options { display: none !important; }
 }
+
+
+/* Source-linked practice atlas and local journal */
+.practice-tracker { margin: 27px 0 30px; }
+.practice-heading h3, .practice-history h3 { color: #eee7d7; font-size: clamp(22px, 2.8vw, 28px); margin: 9px 0 14px; }
+.practice-source-passages { display: grid; gap: 11px; }
+.practice-source-passage { border: 1px solid #415449; background: #20312c; border-radius: 10px; padding: 18px 22px; }
+.practice-passage-number { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #dbbd84; margin: 0 0 11px; }
+.practice-source-passage blockquote { color: #e1e5d9; font-family: Georgia, serif; font-size: 17px; line-height: 1.8; margin: 0 0 12px; border-left: 2px solid #ad8d61; padding-left: 15px; }
+.practice-history { border-top: 1px solid #43534a; padding-top: 28px; margin-top: 30px; }
+.practice-history-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 15px; }
+.practice-history-heading .source-note { max-width: 530px; }
+.practice-count { font-size: 12px; font-variant-numeric: tabular-nums; background: #334337; border: 1px solid #61725a; border-radius: 20px; padding: 7px 12px; color: #e5cf9d; }
+.practice-session-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 9px; }
+.practice-session { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px; background: #1b2a25; border: 1px solid #3a4b40; border-radius: 8px; color: #e3e8dd; font-size: 12px; }
+@media (max-width: 600px) { .practice-source-passage { padding: 15px; } }
+@media print {
+  .practice-history, .practice-source-passage button { display: none !important; }
+  .practice-source-passage { background: #fff !important; border: none; padding: 0; }
+  .practice-source-passage blockquote { color: #111 !important; }
+}

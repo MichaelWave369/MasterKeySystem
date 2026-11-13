@@ -3,9 +3,12 @@ import lessons from "./data/lessons.json";
 import LibraryTools from "./components/LibraryTools.jsx";
 import ConceptAtlas from "./components/ConceptAtlas.jsx";
 import VoiceReader from "./components/VoiceReader.jsx";
+import PracticeTracker from "./components/PracticeTracker.jsx";
+import { buildExerciseIndex } from "./practice/exercises.js";
 import { splitPassages } from "./concepts.js";
 
 const TOTAL = lessons.length;
+const SOURCE_EXERCISES = buildExerciseIndex(lessons);
 const TABS = [
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
@@ -54,14 +57,6 @@ function studyQuestions(source) {
     }).filter(Boolean);
 }
 
-function practicePassages(source) {
-  // Only reproduce passages that explicitly discuss the source's exercise.
-  // Do not generate modern instructions and attribute them to Haanel.
-  const blocks = source.split(/(?=^\d{1,3}\.\s)/gm).filter(block => /^\d{1,3}\.\s/.test(block.trim()));
-  const hits = blocks.filter(block => /\b(your exercise|exercise this week|exercise for this week|exercise for the week|this week's exercise|practice this week)\b/i.test(block));
-  return hits.slice(-3).map(block => block.replace(/\s*\n\s*/g, " ").trim());
-}
-
 function pad(seconds) {
   return String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
 }
@@ -74,6 +69,7 @@ export default function App() {
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
   const [audioBookmarks, setAudioBookmarks] = useStored("mks.audioBookmarks.v1", {});
+  const [practiceSessions, setPracticeSessions] = useStored("mks.practiceSessions.v1", []);
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
   const [query, setQuery] = useState("");
   const [showAbout, setShowAbout] = useState(false);
@@ -85,7 +81,7 @@ export default function App() {
   const complete = done.includes(current.week);
   const progress = Math.round((done.length / TOTAL) * 100);
   const questions = useMemo(() => studyQuestions(current.study), [current.study]);
-  const exercises = useMemo(() => practicePassages(current.reading), [current.reading]);
+  const exercise = SOURCE_EXERCISES[current.week - 1];
   const readingPassages = useMemo(() => splitPassages(current.reading), [current.reading]);
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -177,7 +173,18 @@ export default function App() {
     setAudioBookmarks(previous => ({ ...previous, [lessonWeek]: passage }));
   }
 
+  function recordPractice() {
+    setPracticeSessions(previous => previous.length >= 2000 ? previous : [
+      ...previous, { id: crypto.randomUUID(), at: new Date().toISOString(), week: current.week },
+    ]);
+  }
+
+  function removePracticeEntry(id) {
+    setPracticeSessions(previous => previous.filter(entry => entry.id !== id));
+  }
+
   function restoreStudy(backup) {
+    setPracticeSessions(backup.practiceSessions);
     setNotes(backup.notes);
     setAudioBookmarks(backup.bookmarks);
     setDone(backup.completed);
@@ -244,6 +251,7 @@ export default function App() {
         </header>
         <LibraryTools
           notes={notes} completed={done} week={current.week} bookmarks={audioBookmarks}
+          practiceSessions={practiceSessions}
           readerSize={readerSize} onReaderSizeChange={setReaderSize}
           onRestore={restoreStudy}
         />
@@ -255,7 +263,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, private notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, primary-source-linked exercises for every week, a private practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -330,7 +338,13 @@ export default function App() {
               <section className="reader-card" aria-label="Practice and timer">
                 <div className="card-top"><span className="source-tag">REFLECTIVE PRACTICE</span><span className="reading-length">OPTIONAL</span></div>
                 <h2>Quiet practice</h2>
-                <p className="source-note">Use a simple timer while following the actual exercise in the original lesson. The timer is our modern tool, not part of Haanel's printed instructions.</p>
+                <p className="source-note">The source excerpts below are reproduced from the corresponding original lesson. Use the optional timer while studying or practicing. The timer and journal are modern tools, not Haanel's printed instructions.</p>
+                <PracticeTracker
+                  week={current.week} exercise={exercise}
+                  sessions={practiceSessions}
+                  onRecord={recordPractice} onRemove={removePracticeEntry}
+                  onOpenPassage={openPassage}
+                />
                 <div className="timer">
                   <p>FOCUS TIMER</p>
                   <div className="time-display" role="timer" aria-live="off">{pad(seconds)}</div>
@@ -345,10 +359,6 @@ export default function App() {
                   </div>
                   {seconds === 0 && <p className="timer-done" role="status">Your practice period is complete.</p>}
                 </div>
-                <h3>Exercise references from this lesson</h3>
-                {exercises.length > 0
-                  ? <div className="practice-excerpts">{exercises.map((p, i) => <blockquote key={i}>{p}</blockquote>)}</div>
-                  : <p className="source-note">No exercise passage was automatically identified. Read the conclusion of the full original lesson for the author's precise directions.</p>}
                 <p className="source-note">If practicing stillness or concentration causes discomfort, stop or adjust the exercise. The historical text is for education, not medical treatment.</p>
               </section>
             )}
