@@ -15,9 +15,12 @@ function speechEngine() {
   return window.speechSynthesis;
 }
 
-// Speech uses the original lesson passages only, with no paraphrases,
-// invented narration, network calls, accounts, or external API keys.
-export default function VoiceReader({ passages, startPassage = 1, onPassageChange }) {
+// Reads only original source passages using device/browser speech synthesis.
+// Audio progress is local, opt-in keyboard shortcuts never intercept text inputs.
+export default function VoiceReader({
+  passages, lessonWeek, startPassage = 1, savedPassage = 1,
+  onPassageChange, onSavePassage,
+}) {
   const [available] = useState(() => Boolean(speechEngine()));
   const [voices, setVoices] = useState([]);
   const [voiceURI, setVoiceURI] = useState(() => readPreference("mks.tts.voice.v1", "default"));
@@ -25,7 +28,10 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     const candidate = Number(readPreference("mks.tts.speed.v1", "1"));
     return SPEEDS.includes(candidate) ? candidate : 1;
   });
-  const [position, setPosition] = useState(() => clampPassageIndex(startPassage - 1, passages.length));
+  const [shortcutsEnabled, setShortcutsEnabled] = useState(() =>
+    readPreference("mks.tts.shortcuts.v1", "off") === "on");
+  const [position, setPosition] = useState(() =>
+    clampPassageIndex((startPassage > 1 ? startPassage : savedPassage) - 1, passages.length));
   const [status, setStatus] = useState("idle"); // idle | playing | paused | finished | error
   const [message, setMessage] = useState("");
   const generation = useRef(0);
@@ -49,11 +55,12 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     try {
       window.localStorage.setItem("mks.tts.voice.v1", voiceURI);
       window.localStorage.setItem("mks.tts.speed.v1", String(speed));
-    } catch { /* Browsers may block storage in private mode. */ }
-  }, [voiceURI, speed]);
+      window.localStorage.setItem("mks.tts.shortcuts.v1", shortcutsEnabled ? "on" : "off");
+    } catch { /* Private browsing or disabled storage */ }
+  }, [voiceURI, speed, shortcutsEnabled]);
 
-  // Keyed by lesson in App, so navigating to a new lesson unmounts the
-  // old reader and cancels its old voice session immediately.
+  // VoiceReader is keyed by lessonWeek in App. Unmount always cancels the
+  // previous session before another lesson can start talking.
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -67,7 +74,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     generation.current += 1;
     speechEngine()?.cancel();
     setStatus("idle");
-    setMessage("Narration stopped.");
+    setMessage("Narration stopped. Your listening place is saved.");
     onPassageChange(0);
   }
 
@@ -76,7 +83,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     if (!synth || !passages.length) return;
     const selected = clampPassageIndex(index, passages.length);
     const token = ++generation.current;
-    synth.cancel(); // Also clears an old paused utterance.
+    synth.cancel();
     setPosition(selected);
     setStatus("playing");
     setMessage("");
@@ -85,12 +92,15 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     function speakPassage(passageIndex) {
       if (!mounted.current || token !== generation.current) return;
       if (passageIndex >= passages.length) {
+        setPosition(0);
         setStatus("finished");
-        setMessage("End of lesson.");
+        setMessage("End of lesson. Your listening place has reset to the beginning.");
+        onSavePassage(lessonWeek, 1);
         onPassageChange(0);
         return;
       }
       setPosition(passageIndex);
+      onSavePassage(lessonWeek, passageIndex + 1);
       onPassageChange(passageIndex + 1);
       const chunks = speechChunks(passages[passageIndex]);
       let chunkIndex = 0;
@@ -138,7 +148,8 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     else {
       setPosition(selected);
       setStatus("idle");
-      setMessage("");
+      setMessage("Listening place saved at passage " + (selected + 1) + ".");
+      onSavePassage(lessonWeek, selected + 1);
       onPassageChange(0);
     }
   }
@@ -155,13 +166,42 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
     }
   }
 
+  // Keyboard controls are opt-in and scoped to the active lesson view.
+  // Never hijack normal typing or shortcuts inside forms.
+  useEffect(() => {
+    if (!available || !shortcutsEnabled) return;
+    const onKeyDown = event => {
+      if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      const tag = event.target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "select" || tag === "textarea" ||
+          event.target?.isContentEditable) return;
+      const key = event.key.toLowerCase();
+      if (key === "p") {
+        event.preventDefault();
+        if (status === "playing" || status === "paused") togglePause();
+        else startAt(position);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        seek(position + 1);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        seek(position - 1);
+      } else if (key === "s") {
+        event.preventDefault();
+        stop();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [available, shortcutsEnabled, status, position, voiceURI, voices, speed, passages.length]);
+
   return (
     <section className="voice-reader" aria-label="Listen to this lesson">
       <div className="voice-reader-head">
         <div>
           <p className="voice-kicker">OPTIONAL ACCESSIBILITY FEATURE</p>
           <h3>Listen to this lesson</h3>
-          <p className="source-note">The reader speaks the original text, passage by passage, without changing its wording.</p>
+          <p className="source-note">Listen to Haanel's original text with your device's available voices.</p>
         </div>
         <span className="voice-symbol" aria-hidden="true">♫</span>
       </div>
@@ -174,7 +214,8 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
           <div className="voice-settings">
             <label htmlFor="reader-voice">
               Voice
-              <select id="reader-voice" aria-label="Voice" value={voices.some(v => v.voiceURI === voiceURI) ? voiceURI : "default"}
+              <select id="reader-voice" aria-label="Voice"
+                value={voices.some(v => v.voiceURI === voiceURI) ? voiceURI : "default"}
                 disabled={status === "playing" || status === "paused"}
                 onChange={event => setVoiceURI(event.target.value)}>
                 <option value="default">Device default voice</option>
@@ -206,7 +247,7 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
           <div className="voice-controls">
             <button type="button" className="primary-button" onClick={() => startAt(position)}
               disabled={!passages.length || status === "playing" || status === "paused"}>
-              {status === "finished" ? "Replay from passage" : "Play lesson"}
+              {status === "finished" ? "Replay lesson" : "Play lesson"}
             </button>
             <button type="button" className="secondary-button" onClick={togglePause}
               disabled={status !== "playing" && status !== "paused"}>
@@ -218,14 +259,34 @@ export default function VoiceReader({ passages, startPassage = 1, onPassageChang
               onClick={() => seek(position - 1)}>Previous passage</button>
             <button type="button" className="secondary-button" disabled={position >= passages.length - 1}
               onClick={() => seek(position + 1)}>Next passage</button>
+            {position > 0 &&
+              <button type="button" className="secondary-button" onClick={() => startAt(0)}>
+                Restart lesson
+              </button>}
           </div>
           <p className="voice-progress" aria-live="off">
             {status === "playing" ? "Reading" : status === "paused" ? "Paused at" :
-              status === "finished" ? "Finished at" : "Ready at"} passage {position + 1} of {passages.length}.
+              status === "finished" ? "Finished. Ready to replay from" : "Ready at"} passage {position + 1} of {passages.length}.
           </p>
+          <div className="audio-study-options">
+            {savedPassage > 1 && <p className="source-note" data-testid="audio-bookmark">
+              Saved listening place for Week {lessonWeek}: passage {savedPassage}.
+            </p>}
+            <label className="audio-shortcut-label">
+              <input type="checkbox" checked={shortcutsEnabled}
+                onChange={event => setShortcutsEnabled(event.target.checked)} />
+              Enable keyboard shortcuts
+            </label>
+            {shortcutsEnabled &&
+              <p className="source-note audio-shortcut-help">
+                Alt + Shift + P: play/pause · Alt + Shift + ← / →: previous/next passage ·
+                Alt + Shift + S: stop. Typing in form fields is unaffected.
+              </p>}
+          </div>
           <p className="source-note voice-footnote">
-            Voices depend on your device and browser. Some enhanced voices require an internet connection;
-            local installed voices can work offline. Playback stays in your browser. No text is sent to our servers.
+            Your listening position stays on this device and is included in study backups.
+            Installed local voices may work offline; some voices use the browser vendor's services.
+            Our site does not transmit lesson text or personal notes to a narration server.
           </p>
           {message && <p role="status" className="voice-warning">{message}</p>}
         </>

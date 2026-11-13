@@ -73,6 +73,7 @@ export default function App() {
   const [spokenPassage, setSpokenPassage] = useState(0);
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
+  const [audioBookmarks, setAudioBookmarks] = useStored("mks.audioBookmarks.v1", {});
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
   const [query, setQuery] = useState("");
   const [showAbout, setShowAbout] = useState(false);
@@ -172,8 +173,13 @@ export default function App() {
     setRunning(false);
   }
 
+  function rememberAudioPosition(lessonWeek, passage) {
+    setAudioBookmarks(previous => ({ ...previous, [lessonWeek]: passage }));
+  }
+
   function restoreStudy(backup) {
     setNotes(backup.notes);
+    setAudioBookmarks(backup.bookmarks);
     setDone(backup.completed);
     setWeek(backup.week);
     setActivePassage(0);
@@ -237,7 +243,7 @@ export default function App() {
           <span className="public-domain">PUBLIC-DOMAIN SOURCE TEXT</span>
         </header>
         <LibraryTools
-          notes={notes} completed={done} week={current.week}
+          notes={notes} completed={done} week={current.week} bookmarks={audioBookmarks}
           readerSize={readerSize} onReaderSizeChange={setReaderSize}
           onRestore={restoreStudy}
         />
@@ -285,8 +291,11 @@ export default function App() {
                 <div className="card-top"><span className="source-tag">PRIMARY SOURCE · {current.originalHeading}</span><span className="reading-length">{Math.round(current.reading.split(/\s+/).length / 200)} MIN READ</span></div>
                 <h2>The original lesson</h2>
                 <p className="source-note">Historical text reproduced for study. Claims reflect the author's views, not established scientific findings.</p>
-                <VoiceReader key={current.week} passages={readingPassages}
-                  startPassage={activePassage || 1} onPassageChange={setSpokenPassage} />
+                <VoiceReader key={current.week + ":" + (activePassage || 0)}
+                  lessonWeek={current.week} passages={readingPassages}
+                  startPassage={activePassage || 1}
+                  savedPassage={Number(audioBookmarks[current.week]) || 1}
+                  onPassageChange={setSpokenPassage} onSavePassage={rememberAudioPosition} />
                 <article className="source-text">
                   {readingPassages.map((block, index) => (
                     <p key={index} id={"source-passage-" + (index + 1)}

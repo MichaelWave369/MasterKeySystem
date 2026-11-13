@@ -227,3 +227,14 @@ button:disabled { opacity: .35; cursor: not-allowed; }
   .voice-reader { display: none !important; }
   .source-text p.passage-speaking { background: transparent !important; border: none !important; padding-left: 0 !important; }
 }
+
+
+/* Private listening bookmarks and opt-in keyboard shortcuts */
+.audio-study-options { padding-top: 6px; }
+.audio-study-options p[data-testid="audio-bookmark"] { color: #e1c78e; margin: 7px 0 12px; }
+.audio-shortcut-label { display: inline-flex; align-items: center; gap: 10px; color: #efe6d4; font-size: 13px; cursor: pointer; padding: 5px 0; }
+.audio-shortcut-label input { width: 17px; height: 17px; accent-color: #d6b47a; }
+.audio-shortcut-help { max-width: 690px; padding: 10px 13px; margin: 8px 0; background: #15241e; border-left: 2px solid #bd9e6b; border-radius: 4px; }
+@media print {
+  .audio-study-options { display: none !important; }
+}

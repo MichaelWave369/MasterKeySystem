@@ -26,7 +26,19 @@ function cleanCompleted(raw) {
     throw new Error("Completed lessons must be numbers from 1 through 24.");
   return [...new Set(raw)].sort((a, b) => a - b);
 }
-export function createBackup({ notes, completed, week }) {
+function cleanBookmarks(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw))
+    throw new Error("Listening bookmarks must be an object.");
+  const clean = {};
+  for (const [key, passage] of Object.entries(raw)) {
+    if (!/^(?:[1-9]|1[0-9]|2[0-4])$/.test(key) ||
+        !Number.isInteger(passage) || passage < 1 || passage > 2000)
+      throw new Error("A listening bookmark has an invalid week or passage.");
+    clean[key] = passage;
+  }
+  return clean;
+}
+export function createBackup({ notes, completed, week, bookmarks = {} }) {
   if (!validWeek(week)) throw new Error("Selected lesson is invalid.");
   return {
     format: FORMAT,
@@ -35,6 +47,7 @@ export function createBackup({ notes, completed, week }) {
     week,
     notes: cleanNotes(notes),
     completed: cleanCompleted(completed),
+    bookmarks: cleanBookmarks(bookmarks),
   };
 }
 export function parseBackup(text) {
@@ -48,5 +61,11 @@ export function parseBackup(text) {
     throw new Error("This is not a compatible Master Key System backup.");
   if (!validWeek(backup.week))
     throw new Error("The saved lesson number is invalid.");
-  return { week: backup.week, notes: cleanNotes(backup.notes), completed: cleanCompleted(backup.completed) };
+  return {
+    week: backup.week,
+    notes: cleanNotes(backup.notes),
+    completed: cleanCompleted(backup.completed),
+    // Version 1 exports before Audio Bookmarks did not include this optional field.
+    bookmarks: cleanBookmarks(backup.bookmarks ?? {}),
+  };
 }
