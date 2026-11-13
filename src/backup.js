@@ -52,7 +52,35 @@ function cleanPracticeSessions(raw) {
     return { id: item.id, week: item.week, at: item.at };
   });
 }
-export function createBackup({ notes, completed, week, bookmarks = {}, practiceSessions = [] }) {
+function validDay(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const dt = new Date(value + "T00:00:00.000Z");
+  return !Number.isNaN(dt.getTime()) && dt.toISOString().slice(0, 10) === value;
+}
+function cleanRecallProgress(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) ||
+      Object.keys(raw).length > 240)
+    throw new Error("Recall progress must contain at most 240 question records.");
+  const clean = {};
+  for (const [key, record] of Object.entries(raw)) {
+    const match = key.match(/^([1-9]|1[0-9]|2[0-4]):(\d{1,3})$/);
+    const week = match ? Number(match[1]) : 0;
+    const position = match ? Number(match[2]) : 0;
+    if (!validWeek(week) || position < 1 || position > 10 ||
+        !record || typeof record !== "object" || Array.isArray(record) ||
+        !Number.isInteger(record.streak) || record.streak < 0 || record.streak > 5 ||
+        !validDay(record.reviewedAt) || !validDay(record.dueOn) ||
+        record.dueOn < record.reviewedAt)
+      throw new Error("Recall progress contains an invalid question or review date.");
+    clean[key] = {
+      streak: record.streak,
+      reviewedAt: record.reviewedAt,
+      dueOn: record.dueOn,
+    };
+  }
+  return clean;
+}
+export function createBackup({ notes, completed, week, bookmarks = {}, practiceSessions = [], recallProgress = {} }) {
   if (!validWeek(week)) throw new Error("Selected lesson is invalid.");
   return {
     format: FORMAT,
@@ -63,6 +91,7 @@ export function createBackup({ notes, completed, week, bookmarks = {}, practiceS
     completed: cleanCompleted(completed),
     bookmarks: cleanBookmarks(bookmarks),
     practiceSessions: cleanPracticeSessions(practiceSessions),
+    recallProgress: cleanRecallProgress(recallProgress),
   };
 }
 export function parseBackup(text) {
@@ -83,5 +112,6 @@ export function parseBackup(text) {
     // Version 1 exports before Audio Bookmarks did not include this optional field.
     bookmarks: cleanBookmarks(backup.bookmarks ?? {}),
     practiceSessions: cleanPracticeSessions(backup.practiceSessions ?? []),
+    recallProgress: cleanRecallProgress(backup.recallProgress ?? {}),
   };
 }

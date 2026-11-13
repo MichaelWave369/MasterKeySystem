@@ -259,3 +259,29 @@ button:disabled { opacity: .35; cursor: not-allowed; }
   .practice-source-passage { background: #fff !important; border: none; padding: 0; }
   .practice-source-passage blockquote { color: #111 !important; }
 }
+
+
+/* Self-rated, source-faithful active recall experience */
+.recall-view h2 { margin-bottom: 12px; }
+.recall-switches { display: flex; flex-wrap: wrap; gap: 13px; margin: 22px 0 15px; }
+.recall-switch-group { display: flex; flex-wrap: wrap; gap: 5px; border: 1px solid #46594a; border-radius: 10px; padding: 4px; background: #1c2a27; }
+.recall-switch-group button { border: none; background: transparent; color: #e0e5d7; padding: 10px 13px; font-size: 12px; border-radius: 7px; }
+.recall-switch-group button.recall-active { background: #4b513a; color: #f3e1bc; box-shadow: inset 0 0 0 1px #baa173; }
+.recall-stat-row { display: flex; gap: 10px 25px; flex-wrap: wrap; font-size: 12px; color: #bac9b7; margin: 20px 0; }
+.recall-stat-row strong { color: #eddaa7; font-size: 15px; }
+.recall-card, .recall-finished { background: #1d2b27; border: 1px solid #48604d; border-radius: 12px; padding: 22px; }
+.recall-index { font-size: 11px; letter-spacing: .13em; color: #dabd86; margin: 0 0 10px; }
+.recall-card h3, .recall-finished h3 { font-size: clamp(21px, 2.5vw, 27px); font-family: Georgia, serif; line-height: 1.4; color: #f3eddc; margin: 0 0 25px; }
+.recall-draft { margin: 9px 0 18px; }
+.recall-answer { margin: 19px 0; border-top: 1px solid #4d5a4b; padding-top: 23px; }
+.recall-answer blockquote { font-size: 18px; font-family: Georgia, serif; line-height: 1.75; margin: 12px 0; border-left: 3px solid #d6b47a; color: #eee8d9; padding-left: 16px; }
+.recall-review-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+.recall-local-note { margin: 18px 0 0; }
+@media (max-width: 600px) {
+  .recall-card, .recall-finished { padding: 16px; }
+  .recall-switch-group { width: 100%; }
+  .recall-switch-group button { flex: 1; }
+}
+@media print {
+  .recall-switches, .recall-review-actions, .recall-draft { display: none !important; }
+}

@@ -12,6 +12,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - Week-by-week navigation and a completion tracker
 - Collapsible original question/answer cards
 - Original source-linked exercise passages for every week, optional timer, and local practice journal
+- **Active Recall** for all 240 original printed study questions, with reveal-after-attempt, self-rating, due-review scheduling, and local progress backups
 - Private per-week notes stored in your browser's local storage, with JSON backup import/export
 - Offline reading after the first successful visit (all original lesson text is bundled)
 - Print-friendly lessons and adjustable reading text size
@@ -62,7 +63,7 @@ The Vite `base` is set to `/MasterKeySystem/` only for GitHub Pages builds, pres
 
 Offline reading: the app registers a service worker in production, storing the built HTML, scripts, styles, manifest, and the bundled 24-part corpus on the first online visit. After the service worker activates, the study reader and local notes work with the network disconnected. New builds use a content-derived cache key to replace stale site files. Public source links outside the app still need a connection.
 
-Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, per-lesson listening positions, practice history, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
+Study backups: **Export backup** downloads a local JSON file containing only notes, completed weeks, per-lesson listening positions, practice history, self-rated recall reviews, and the selected week. **Import backup** validates its format, imposes size limits, and asks before overwriting the current local data. No study data is uploaded to a server.
 
 For a command-line preview of the same build, run:
 
@@ -70,6 +71,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Active recall study mode
+
+The **Recall quiz** tab presents the 240 original printed questions in study order, either for the selected week or for all 24 weeks. Readers can write a temporary draft or think through the question, then choose **Reveal printed answer**. The response is the original Haanel answer, explicitly labeled as historical content, not validated knowledge. The app does not infer whether a spiritual or medical claim is scientifically true, and it never grades the user's draft. Card identifiers use their **position within each week**, not the printed question number, because the supplied transcription of Part 13 labels the seventh question "27" rather than "127". That source irregularity is preserved on screen, not silently corrected.
+
+Once revealed, readers self-rate with **Review again** or **I recalled it**. The next review is due immediately after Review again or in 1, 3, 7, 14, and then 30-day intervals for consecutive recalled ratings. Filters show questions due today or all questions. Review progress is kept in browser storage and exported with the study backup; old backups without this optional data remain compatible. Draft text is ephemeral and never exported or uploaded. This is a simple mnemonic schedule, **not** a claim of validated personalized AI memory optimization.
 
 ## Original weekly exercises and practice journal
 

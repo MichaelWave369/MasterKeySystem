@@ -1,13 +1,13 @@
 import React, { useRef, useState } from "react";
 import { createBackup, parseBackup } from "../backup.js";
 
-export default function LibraryTools({ notes, completed, week, bookmarks, practiceSessions, readerSize, onReaderSizeChange, onRestore }) {
+export default function LibraryTools({ notes, completed, week, bookmarks, practiceSessions, recallProgress, readerSize, onReaderSizeChange, onRestore }) {
   const fileInput = useRef(null);
   const [message, setMessage] = useState("");
 
   function downloadBackup() {
     try {
-      const payload = createBackup({ notes, completed, week, bookmarks, practiceSessions });
+      const payload = createBackup({ notes, completed, week, bookmarks, practiceSessions, recallProgress });
       const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -28,12 +28,12 @@ export default function LibraryTools({ notes, completed, week, bookmarks, practi
     if (file.size > 1024 * 1024) { setMessage("File is too large. Backups must be under 1 MB."); return; }
     try {
       const payload = parseBackup(await file.text());
-      if (!window.confirm("Restore this backup? It will replace your notes, completed lessons, listening positions, and practice journal on this device. Export the current notes first if you need them.")) {
+      if (!window.confirm("Restore this backup? It will replace your notes, completed lessons, listening positions, practice history, and recall reviews on this device. Export the current notes first if you need them.")) {
         setMessage("Import cancelled; your current notes are unchanged.");
         return;
       }
       onRestore(payload);
-      setMessage("Backup restored. Your notes, progress, listening positions, and practice history are now available.");
+      setMessage("Backup restored. Your notes, progress, listening positions, practice history, and recall reviews are now available.");
     } catch (error) { setMessage("Import failed: " + error.message); }
   }
 
