@@ -419,7 +419,7 @@ test("24-week dashboard presents private totals and navigates to all study secti
   await expect(page.getByRole("heading", { name: "Active recall" })).toBeVisible();
 
   await page.getByRole("tab", { name: "Study dashboard" }).click();
-  await page.getByRole("button", { name: "Read Week 1" }).click();
+  await page.getByRole("button", { name: "Read Week 1", exact: true }).click();
   await expect(page).toHaveURL(/#week-1$/);
   await expect(page.getByRole("heading", { name: "The World Within", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
