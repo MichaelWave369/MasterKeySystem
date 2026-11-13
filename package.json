@@ -8,7 +8,7 @@
     "build": "vite build && node scripts/create-offline-worker.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "check:content": "node scripts/check-content.mjs",
-    "test": "npm run check:content && npm run test:backup && npm run test:concepts && npm run test:speech && npm run test:practice && npm run test:recall && npm run test:dashboard && npm run test:search",
+    "test": "npm run check:content && npm run test:backup && npm run test:concepts && npm run test:speech && npm run test:practice && npm run test:recall && npm run test:dashboard && npm run test:search && npm run test:shelf",
     "test:browser": "playwright test",
     "preview:pages": "node scripts/serve-pages-preview.mjs",
     "test:backup": "node --test tests/backup.test.mjs",
@@ -17,7 +17,8 @@
     "test:practice": "node --test tests/practice.test.mjs",
     "test:recall": "node --test tests/recall.test.mjs",
     "test:dashboard": "node --test tests/dashboard.test.mjs",
-    "test:search": "node --test tests/search.test.mjs"
+    "test:search": "node --test tests/search.test.mjs",
+    "test:shelf": "node --test tests/saved-sources.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

@@ -8,6 +8,8 @@ import RecallQuiz from "./components/RecallQuiz.jsx";
 import StudyDashboard from "./components/StudyDashboard.jsx";
 import BookSearch from "./components/BookSearch.jsx";
 import HighlightedText from "./components/HighlightedText.jsx";
+import SavedSources from "./components/SavedSources.jsx";
+import { addSource, updateSourceNote } from "./shelf/savedSources.js";
 import { nextReview } from "./quiz/recall.js";
 import { buildExerciseIndex } from "./practice/exercises.js";
 import { splitPassages } from "./concepts.js";
@@ -17,6 +19,7 @@ const SOURCE_EXERCISES = buildExerciseIndex(lessons);
 const TABS = [
   { key: "dashboard", label: "Study dashboard" },
   { key: "search", label: "Book search" },
+  { key: "saved", label: "Saved sources" },
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
   { key: "recall", label: "Recall quiz" },
@@ -87,6 +90,7 @@ export default function App() {
   const [audioBookmarks, setAudioBookmarks] = useStored("mks.audioBookmarks.v1", {});
   const [practiceSessions, setPracticeSessions] = useStored("mks.practiceSessions.v1", []);
   const [recallProgress, setRecallProgress] = useStored("mks.recallProgress.v1", {});
+  const [savedSources, setSavedSources] = useStored("mks.savedSources.v1", []);
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
   const [query, setQuery] = useState("");
   const [showAbout, setShowAbout] = useState(false);
@@ -244,6 +248,16 @@ export default function App() {
     setPracticeSessions(previous => previous.filter(entry => entry.id !== id));
   }
 
+  function toggleSavedSource(id) {
+    setSavedSources(previous => previous.some(item => item.id === id)
+      ? previous.filter(item => item.id !== id)
+      : addSource(previous, id));
+  }
+
+  function editSavedSource(id, note) {
+    setSavedSources(previous => updateSourceNote(previous, id, note));
+  }
+
   function recordRecall(key, outcome) {
     setRecallProgress(previous => ({
       ...previous,
@@ -252,6 +266,7 @@ export default function App() {
   }
 
   function restoreStudy(backup) {
+    setSavedSources(backup.savedSources);
     setRecallProgress(backup.recallProgress);
     setPracticeSessions(backup.practiceSessions);
     setNotes(backup.notes);
@@ -340,7 +355,7 @@ export default function App() {
         <LibraryTools
           notes={notes} completed={done} week={current.week} bookmarks={audioBookmarks}
           practiceSessions={practiceSessions} recallProgress={recallProgress}
-          readerSize={readerSize} onReaderSizeChange={setReaderSize}
+          savedSources={savedSources} readerSize={readerSize} onReaderSizeChange={setReaderSize}
           onRestore={restoreStudy}
         />
 
@@ -351,7 +366,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, a private 24-week study dashboard, literal full-book passage and question search, primary-source-linked exercises for every week, a practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, a private 24-week study dashboard, literal full-book passage and question search, a private saved-source shelf with personal annotations, primary-source-linked exercises for every week, a practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -366,7 +381,14 @@ export default function App() {
           <>
             <section className="hero">
               <div className="hero-copy">
-                {tab === "search" ? (
+                {tab === "saved" ? (
+                  <>
+                    <p className="section-kicker">YOUR PRIVATE SOURCE COLLECTION</p>
+                    <h1>Saved sources</h1>
+                    <p className="lead">Collected passages and personal reflections, each tied to the original text.</p>
+                    <div className="hero-meta"><span>ORIGINAL PASSAGES</span><span aria-hidden="true">·</span><span>PRINTED STUDY QUESTIONS</span></div>
+                  </>
+                ) : tab === "search" ? (
                   <>
                     <p className="section-kicker">FIND THE ORIGINAL WORDING</p>
                     <h1>Search the book</h1>
@@ -402,6 +424,13 @@ export default function App() {
 
             {tab === "search" && (
               <BookSearch query={query} onQueryChange={setQuery}
+                onOpenReading={openPassage} onOpenQuestion={openQuestion}
+                savedIds={savedSources.map(item => item.id)} onToggleSave={toggleSavedSource} />
+            )}
+
+            {tab === "saved" && (
+              <SavedSources savedSources={savedSources}
+                onUpdate={editSavedSource} onRemove={toggleSavedSource}
                 onOpenReading={openPassage} onOpenQuestion={openQuestion} />
             )}
 
@@ -423,19 +452,32 @@ export default function App() {
                   savedPassage={Number(audioBookmarks[current.week]) || 1}
                   onPassageChange={setSpokenPassage} onSavePassage={rememberAudioPosition} />
                 <article className="source-text">
-                  {readingPassages.map((block, index) => (
-                    <p key={index} id={"source-passage-" + (index + 1)}
-                      tabIndex={-1} className={[
-                        activePassage === index + 1 ? "passage-active" : "",
-                        spokenPassage === index + 1 ? "passage-speaking" : "",
-                      ].filter(Boolean).join(" ") || undefined}>
-                      {sourceHighlight?.kind === "reading" &&
-                       sourceHighlight.week === current.week &&
-                       sourceHighlight.position === index + 1
-                        ? <HighlightedText text={block} term={sourceHighlight.term} />
-                        : block}
-                    </p>
-                  ))}
+                  {readingPassages.map((block, index) => {
+                    const sourceId = "p:" + current.week + ":" + (index + 1);
+                    const isSaved = savedSources.some(item => item.id === sourceId);
+                    return (
+                      <div className="reader-source-row" key={index}>
+                        <p id={"source-passage-" + (index + 1)}
+                          tabIndex={-1} className={[
+                            activePassage === index + 1 ? "passage-active" : "",
+                            spokenPassage === index + 1 ? "passage-speaking" : "",
+                          ].filter(Boolean).join(" ") || undefined}>
+                          {sourceHighlight?.kind === "reading" &&
+                           sourceHighlight.week === current.week &&
+                           sourceHighlight.position === index + 1
+                            ? <HighlightedText text={block} term={sourceHighlight.term} />
+                            : block}
+                        </p>
+                        <button type="button" className="save-source-action"
+                          aria-pressed={isSaved}
+                          aria-label={(isSaved ? "Unsave" : "Save") + " passage " + (index + 1)}
+                          disabled={!isSaved && savedSources.length >= 200}
+                          onClick={() => toggleSavedSource(sourceId)}>
+                          {isSaved ? "✓ Saved" : "＋ Save passage"}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </article>
               </section>
             )}
@@ -461,6 +503,18 @@ export default function App() {
                         <p className="question-answer"><span>ORIGINAL ANSWER</span>
                           {term ? <HighlightedText text={item.answer} term={term} /> : item.answer}
                         </p>
+                        <button type="button" className="save-source-action"
+                          aria-pressed={savedSources.some(saved => saved.id ===
+                            "q:" + current.week + ":" + (index + 1))}
+                          aria-label={(savedSources.some(saved => saved.id ===
+                            "q:" + current.week + ":" + (index + 1)) ? "Unsave" : "Save") +
+                            " question " + (index + 1)}
+                          disabled={savedSources.length >= 200 && !savedSources.some(saved =>
+                            saved.id === "q:" + current.week + ":" + (index + 1))}
+                          onClick={() => toggleSavedSource("q:" + current.week + ":" + (index + 1))}>
+                          {savedSources.some(saved => saved.id ===
+                            "q:" + current.week + ":" + (index + 1)) ? "✓ Saved" : "＋ Save question"}
+                        </button>
                       </details>
                     );
                   })}

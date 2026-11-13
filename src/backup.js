@@ -1,3 +1,5 @@
+import { cleanSavedSources } from "./shelf/savedSources.js";
+
 const FORMAT = "master-key-system-study-backup";
 const VERSION = 1;
 const MAX_TEXT_SIZE = 1024 * 1024;
@@ -80,7 +82,7 @@ function cleanRecallProgress(raw) {
   }
   return clean;
 }
-export function createBackup({ notes, completed, week, bookmarks = {}, practiceSessions = [], recallProgress = {} }) {
+export function createBackup({ notes, completed, week, bookmarks = {}, practiceSessions = [], recallProgress = {}, savedSources = [] }) {
   if (!validWeek(week)) throw new Error("Selected lesson is invalid.");
   return {
     format: FORMAT,
@@ -92,6 +94,7 @@ export function createBackup({ notes, completed, week, bookmarks = {}, practiceS
     bookmarks: cleanBookmarks(bookmarks),
     practiceSessions: cleanPracticeSessions(practiceSessions),
     recallProgress: cleanRecallProgress(recallProgress),
+    savedSources: cleanSavedSources(savedSources),
   };
 }
 export function parseBackup(text) {
@@ -113,5 +116,6 @@ export function parseBackup(text) {
     bookmarks: cleanBookmarks(backup.bookmarks ?? {}),
     practiceSessions: cleanPracticeSessions(backup.practiceSessions ?? []),
     recallProgress: cleanRecallProgress(backup.recallProgress ?? {}),
+    savedSources: cleanSavedSources(backup.savedSources ?? []),
   };
 }
