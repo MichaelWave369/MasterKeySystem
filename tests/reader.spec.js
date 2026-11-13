@@ -393,3 +393,64 @@ test("quiz self-assessments survive JSON backup and restore without storing draf
   });
   expect(backupText).not.toContain("ephemeral answer");
 });
+
+
+test("24-week dashboard presents private totals and navigates to all study sections", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Open study dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Study dashboard", exact: true })).toBeVisible();
+  await expect(page.locator(".dashboard-week")).toHaveCount(24);
+  await expect(page.getByTestId("metric-lessons")).toContainText("0 / 24");
+  await expect(page.getByTestId("metric-practice")).toContainText("0");
+  await expect(page.getByTestId("metric-reviews")).toContainText("0");
+  await expect(page.getByTestId("metric-new")).toContainText("240");
+
+  await page.getByRole("button", { name: "Practice Week 6" }).click();
+  await expect(page).toHaveURL(/#week-6$/);
+  await expect(page.getByRole("tab", { name: "Practice" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Photograph and attention" })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Study dashboard" }).click();
+  await page.getByRole("button", { name: "Recall Week 24" }).click();
+  await expect(page).toHaveURL(/#week-24$/);
+  await expect(page.getByRole("tab", { name: "Recall quiz" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Active recall" })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Study dashboard" }).click();
+  await page.getByRole("button", { name: "Read Week 1" }).click();
+  await expect(page).toHaveURL(/#week-1$/);
+  await expect(page.getByRole("heading", { name: "The World Within", exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("dashboard updates from actual reading, journal, notes and recall actions", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Mark lesson complete" }).click();
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await page.getByRole("button", { name: "Record a practice session" }).click();
+  await page.getByRole("tab", { name: "My notes" }).click();
+  await page.getByLabel("NOTES FOR WEEK 1").fill("My private observation");
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await page.getByRole("button", { name: "Reveal printed answer" }).click();
+  await page.getByRole("button", { name: "I recalled it" }).click();
+
+  await page.getByRole("tab", { name: "Study dashboard" }).click();
+  await expect(page.getByTestId("metric-lessons")).toContainText("1 / 24");
+  await expect(page.getByTestId("metric-practice")).toContainText("1");
+  await expect(page.getByTestId("metric-reviews")).toContainText("0");
+  await expect(page.getByTestId("metric-new")).toContainText("239");
+  await expect(page.locator(".dashboard-detail-strip")).toContainText("1 weeks with private notes");
+  await expect(page.locator(".dashboard-detail-strip")).toContainText("1 / 240 questions self-rated");
+  await expect(page.getByTestId("week-1")).toContainText("Completed");
+  await expect(page.getByTestId("week-1")).toContainText("1 practice session");
+  await expect(page.getByTestId("week-1")).toContainText("1/10 questions rated");
+  await expect(page.locator(".dashboard-recent-list li")).toHaveCount(1);
+
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Study dashboard" }).click();
+  await expect(page.getByTestId("metric-lessons")).toContainText("1 / 24");
+  await expect(page.getByTestId("metric-practice")).toContainText("1");
+  await expect(page.getByTestId("metric-new")).toContainText("239");
+});
