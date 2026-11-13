@@ -330,3 +330,66 @@ test("private practice history can be exported, restored, and removed", async ({
   await expect(page.locator(".practice-session")).toHaveCount(0);
   await expect(page.locator(".practice-count")).toContainText("0 sessions");
 });
+
+
+test("active recall keeps printed answers hidden until reveal and schedules self-rated review", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await expect(page.getByRole("heading", { name: "Active recall" })).toBeVisible();
+  await expect(page.locator(".recall-card h3")).toHaveText(
+    "What is the world without in its relation to the world within?");
+  await expect(page.locator(".recall-answer")).toHaveCount(0);
+  await page.getByLabel("YOUR PRIVATE, TEMPORARY RECALL").fill("My answer from memory");
+  await page.getByRole("button", { name: "Reveal printed answer" }).click();
+  await expect(page.locator(".recall-answer")).toContainText(
+    "The world without is a reflection of the world within.");
+  await page.getByRole("button", { name: "I recalled it" }).click();
+  await expect(page.locator(".recall-card h3")).toHaveText(
+    "Upon what does all possession depend?");
+  await expect(page.locator(".recall-draft")).toHaveValue("");
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("mks.recallProgress.v1"))?.["1:1"]?.streak)).toBe(1);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await expect(page.locator(".recall-card h3")).toHaveText(
+    "Upon what does all possession depend?");
+  await page.getByRole("button", { name: "All 24 weeks" }).click();
+  await expect(page.locator(".recall-stat-row")).toContainText("240");
+  await page.getByRole("button", { name: "All questions" }).click();
+  await expect(page.locator(".recall-card h3")).toHaveText(
+    "What is the world without in its relation to the world within?");
+  expect(errors).toEqual([]);
+});
+
+test("quiz self-assessments survive JSON backup and restore without storing drafts", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await page.getByLabel("YOUR PRIVATE, TEMPORARY RECALL").fill("This ephemeral answer is secret");
+  await page.getByRole("button", { name: "Reveal printed answer" }).click();
+  await page.getByRole("button", { name: "Review again" }).click();
+
+  const downloadReady = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export backup" }).click();
+  const download = await downloadReady;
+  const file = await download.path();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await expect(page.locator(".recall-stat-row")).toContainText("10 due today");
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator('input[type="file"]').setInputFiles(file);
+  await expect(page.getByRole("status")).toContainText("Backup restored");
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("mks.recallProgress.v1"))?.["1:1"]?.streak)).toBe(0);
+  await page.getByRole("tab", { name: "Recall quiz" }).click();
+  await expect(page.locator(".recall-draft")).toHaveValue("");
+  const backupText = await page.evaluate(async () => {
+    const data = JSON.parse(localStorage.getItem("mks.recallProgress.v1"));
+    return JSON.stringify(data);
+  });
+  expect(backupText).not.toContain("ephemeral answer");
+});
