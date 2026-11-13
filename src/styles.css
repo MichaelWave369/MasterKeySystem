@@ -330,3 +330,26 @@ button:disabled { opacity: .35; cursor: not-allowed; }
   .dashboard-metric, .dashboard-week { color: #111 !important; background: #fff !important; }
   .dashboard-week h4, .dashboard-section-head h3, .dashboard-recent h3 { color: #111 !important; }
 }
+
+
+/* Exact source-linked full-book search */
+.search-sidebar-link { background: #384c3d; color: #f2dbad; border: 1px solid #c2a274; border-radius: 8px; padding: 10px; margin: 12px 0 0; font-size: 12px; font-weight: 600; width: 100%; }
+.search-sidebar-link:hover { background: #4d5d46; }
+.book-search-input { font-size: 16px; margin: 10px 0 14px; }
+.search-filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 7px 0 20px; }
+.search-filters button { background: #1d2d27; border: 1px solid #4b5e4e; border-radius: 8px; color: #d7e0d1; padding: 10px 13px; font-size: 12px; }
+.search-filters button.search-filter-selected { background: #4e523b; color: #f4e1b7; border-color: #cfb17e; }
+.search-prompt { margin: 24px 0; }
+.search-result-count { color: #e7cc91; font-size: 13px; padding: 0 0 12px; border-bottom: 1px solid #394b41; }
+.search-results { display: grid; gap: 12px; padding: 12px 0 17px; }
+.search-hit { background: #1c2c27; border: 1px solid #405447; border-radius: 10px; padding: 20px; }
+.search-hit-meta { color: #d8b77e; letter-spacing: .12em; font-size: 10px; margin: 0 0 9px; }
+.search-hit h3 { color: #f0e6d4; font-size: 18px; font-family: Georgia, serif; margin: 0 0 12px; }
+.search-hit blockquote { color: #d8e2d6; font-size: 16px; line-height: 1.7; font-family: Georgia, serif; border-left: 2px solid #988159; margin: 0 0 12px; padding-left: 14px; overflow-wrap: anywhere; }
+.search-highlight { background: #dfba78; color: #1a241b; padding: 1px 2px; border-radius: 2px; box-decoration-break: clone; }
+.source-text .search-highlight, .question-item .search-highlight { background: #ead28f; color: #142119; }
+.question-item.question-target { border-left: 3px solid #dcc084; background: #2b382e; scroll-margin-top: 40px; }
+.search-more { margin-bottom: 12px; }
+.search-disclaimer { margin-top: 24px; }
+@media (max-width: 540px) { .search-hit { padding: 14px; } }
+@media print { .search-sidebar-link, .search-filters, .search-more, .search-hit button { display: none !important; } }

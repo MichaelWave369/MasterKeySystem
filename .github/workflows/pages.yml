@@ -53,6 +53,9 @@ jobs:
       - name: Verify private 24-week dashboard metrics
         run: npm run test:dashboard
 
+      - name: Verify exact source search and passage links
+        run: npm run test:search
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages

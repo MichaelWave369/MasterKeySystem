@@ -35,6 +35,9 @@ jobs:
       - name: Verify private 24-week dashboard metrics
         run: npm run test:dashboard
 
+      - name: Verify exact source search and passage links
+        run: npm run test:search
+
       - name: Build app for GitHub Pages subpath
         run: npm run build
         env:

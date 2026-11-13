@@ -6,6 +6,8 @@ import VoiceReader from "./components/VoiceReader.jsx";
 import PracticeTracker from "./components/PracticeTracker.jsx";
 import RecallQuiz from "./components/RecallQuiz.jsx";
 import StudyDashboard from "./components/StudyDashboard.jsx";
+import BookSearch from "./components/BookSearch.jsx";
+import HighlightedText from "./components/HighlightedText.jsx";
 import { nextReview } from "./quiz/recall.js";
 import { buildExerciseIndex } from "./practice/exercises.js";
 import { splitPassages } from "./concepts.js";
@@ -14,6 +16,7 @@ const TOTAL = lessons.length;
 const SOURCE_EXERCISES = buildExerciseIndex(lessons);
 const TABS = [
   { key: "dashboard", label: "Study dashboard" },
+  { key: "search", label: "Book search" },
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
   { key: "recall", label: "Recall quiz" },
@@ -38,7 +41,7 @@ function useStored(key, initial) {
 }
 
 function hashWeek() {
-  const match = window.location.hash.match(/^#week-(\d{1,2})(?:-p-(\d+))?$/);
+  const match = window.location.hash.match(/^#week-(\d{1,2})(?:-(?:p|q)-(\d+))?$/);
   const value = match ? Number(match[1]) : 1;
   return value >= 1 && value <= TOTAL ? value : 1;
 }
@@ -46,6 +49,12 @@ function hashWeek() {
 function hashPassage() {
   const match = window.location.hash.match(/^#week-(\d{1,2})-p-(\d+)$/);
   return match && Number(match[2]) >= 1 && Number.isSafeInteger(Number(match[2]))
+    ? Number(match[2]) : 0;
+}
+
+function hashQuestion() {
+  const match = window.location.hash.match(/^#week-(\d{1,2})-q-(\d+)$/);
+  return match && Number(match[2]) >= 1 && Number(match[2]) <= 10
     ? Number(match[2]) : 0;
 }
 
@@ -68,8 +77,10 @@ function pad(seconds) {
 
 export default function App() {
   const [week, setWeek] = useStored("mks.week.v1", hashWeek());
-  const [tab, setTab] = useState("read");
+  const [tab, setTab] = useState(() => hashQuestion() ? "questions" : "read");
   const [activePassage, setActivePassage] = useState(hashPassage);
+  const [activeQuestion, setActiveQuestion] = useState(hashQuestion);
+  const [sourceHighlight, setSourceHighlight] = useState(null);
   const [spokenPassage, setSpokenPassage] = useState(0);
   const [done, setDone] = useStored("mks.completed.v1", []);
   const [notes, setNotes] = useStored("mks.notes.v1", {});
@@ -103,6 +114,8 @@ export default function App() {
     const safe = Math.max(1, Math.min(TOTAL, Number(next)));
     setWeek(safe);
     setActivePassage(0);
+    setActiveQuestion(0);
+    setSourceHighlight(null);
     setSpokenPassage(0);
     setTab("read");
     setShowAbout(false);
@@ -115,6 +128,8 @@ export default function App() {
         !["read", "practice", "recall", "notes"].includes(section)) return;
     setWeek(targetWeek);
     setActivePassage(0);
+    setActiveQuestion(0);
+    setSourceHighlight(null);
     setSpokenPassage(0);
     setTab(section);
     setShowAbout(false);
@@ -122,24 +137,41 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function openPassage(targetWeek, passage) {
+  function openPassage(targetWeek, passage, searchTerm = "") {
     if (!Number.isInteger(targetWeek) || targetWeek < 1 || targetWeek > TOTAL ||
         !Number.isInteger(passage) || passage < 1 ||
         passage > splitPassages(lessons[targetWeek - 1].reading).length) return;
     setWeek(targetWeek);
     setActivePassage(passage);
+    setActiveQuestion(0);
+    setSourceHighlight(searchTerm ? { kind: "reading", week: targetWeek, position: passage, term: searchTerm } : null);
     setSpokenPassage(0);
     setTab("read");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + targetWeek + "-p-" + passage);
   }
 
+  function openQuestion(targetWeek, position, searchTerm = "") {
+    if (!Number.isInteger(targetWeek) || targetWeek < 1 || targetWeek > TOTAL ||
+        !Number.isInteger(position) || position < 1 || position > 10) return;
+    setWeek(targetWeek);
+    setActivePassage(0);
+    setActiveQuestion(position);
+    setSourceHighlight(searchTerm ? { kind: "question", week: targetWeek, position, term: searchTerm } : null);
+    setSpokenPassage(0);
+    setTab("questions");
+    setShowAbout(false);
+    window.history.replaceState(null, "", "#week-" + targetWeek + "-q-" + position);
+  }
+
   useEffect(() => {
     const update = () => {
       setWeek(hashWeek());
       setActivePassage(hashPassage());
+      setActiveQuestion(hashQuestion());
+      setSourceHighlight(null);
       setSpokenPassage(0);
-      setTab("read");
+      setTab(hashQuestion() ? "questions" : "read");
       setShowAbout(false);
     };
     window.addEventListener("hashchange", update);
@@ -156,6 +188,17 @@ export default function App() {
     });
     return () => window.cancelAnimationFrame(handle);
   }, [tab, week, activePassage, showAbout]);
+
+  useEffect(() => {
+    if (tab !== "questions" || showAbout || !activeQuestion) return;
+    const handle = window.requestAnimationFrame(() => {
+      const question = document.getElementById("source-question-" + activeQuestion);
+      if (!question) return;
+      question.scrollIntoView({ behavior: "smooth", block: "center" });
+      question.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(handle);
+  }, [tab, week, activeQuestion, showAbout]);
 
   useEffect(() => {
     if (tab !== "read" || showAbout || !spokenPassage) return;
@@ -216,6 +259,8 @@ export default function App() {
     setDone(backup.completed);
     setWeek(backup.week);
     setActivePassage(0);
+    setActiveQuestion(0);
+    setSourceHighlight(null);
     setSpokenPassage(0);
     setTab("notes");
     setShowAbout(false);
@@ -254,6 +299,17 @@ export default function App() {
         <input id="lesson-search" className="search" type="search" value={query}
           onChange={event => setQuery(event.target.value)}
           placeholder="Search all 24 lessons..." />
+
+        {query.trim().length >= 2 && (
+          <button type="button" className="search-sidebar-link"
+            onClick={() => {
+              setShowAbout(false);
+              setTab("search");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}>
+            View exact source matches
+          </button>
+        )}
 
         <div className="list-heading"><span>THE LESSONS</span><span>{visible.length} shown</span></div>
         <nav className="lesson-nav" aria-label="24 lessons">
@@ -295,7 +351,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, a private 24-week study dashboard, primary-source-linked exercises for every week, a practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, a private 24-week study dashboard, literal full-book passage and question search, primary-source-linked exercises for every week, a practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -310,7 +366,14 @@ export default function App() {
           <>
             <section className="hero">
               <div className="hero-copy">
-                {tab === "dashboard" ? (
+                {tab === "search" ? (
+                  <>
+                    <p className="section-kicker">FIND THE ORIGINAL WORDING</p>
+                    <h1>Search the book</h1>
+                    <p className="lead">Explore the full text and follow exact passages back to their sources.</p>
+                    <div className="hero-meta"><span>24 LESSONS</span><span aria-hidden="true">·</span><span>240 ORIGINAL QUESTIONS</span></div>
+                  </>
+                ) : tab === "dashboard" ? (
                   <>
                     <p className="section-kicker">YOUR 24-WEEK STUDY MAP</p>
                     <h1>Study dashboard</h1>
@@ -337,6 +400,11 @@ export default function App() {
               ))}
             </div>
 
+            {tab === "search" && (
+              <BookSearch query={query} onQueryChange={setQuery}
+                onOpenReading={openPassage} onOpenQuestion={openQuestion} />
+            )}
+
             {tab === "dashboard" && (
               <StudyDashboard currentWeek={current.week}
                 completed={done} notes={notes} bookmarks={audioBookmarks}
@@ -361,7 +429,11 @@ export default function App() {
                         activePassage === index + 1 ? "passage-active" : "",
                         spokenPassage === index + 1 ? "passage-speaking" : "",
                       ].filter(Boolean).join(" ") || undefined}>
-                      {block}
+                      {sourceHighlight?.kind === "reading" &&
+                       sourceHighlight.week === current.week &&
+                       sourceHighlight.position === index + 1
+                        ? <HighlightedText text={block} term={sourceHighlight.term} />
+                        : block}
                     </p>
                   ))}
                 </article>
@@ -374,12 +446,24 @@ export default function App() {
                 <h2>Test your understanding</h2>
                 <p className="source-note">Open each question to reveal the answer as printed in the source. These are Haanel's answers, not independently verified facts.</p>
                 <div className="question-list">
-                  {questions.map(item => (
-                    <details className="question-item" key={item.number}>
-                      <summary><span className="question-index">{String(item.number).padStart(3, "0")}</span><span>{item.question}</span><span className="disclosure" aria-hidden="true">+</span></summary>
-                      <p className="question-answer"><span>ORIGINAL ANSWER</span>{item.answer}</p>
-                    </details>
-                  ))}
+                  {questions.map((item, index) => {
+                    const focused = activeQuestion === index + 1;
+                    const term = sourceHighlight?.kind === "question" &&
+                      sourceHighlight.week === current.week &&
+                      sourceHighlight.position === index + 1 ? sourceHighlight.term : "";
+                    return (
+                      <details className={"question-item" + (focused ? " question-target" : "")}
+                        key={index} id={"source-question-" + (index + 1)}
+                        open={focused} tabIndex={-1}>
+                        <summary><span className="question-index">{String(item.number).padStart(3, "0")}</span>
+                          <span>{term ? <HighlightedText text={item.question} term={term} /> : item.question}</span>
+                          <span className="disclosure" aria-hidden="true">+</span></summary>
+                        <p className="question-answer"><span>ORIGINAL ANSWER</span>
+                          {term ? <HighlightedText text={item.answer} term={term} /> : item.answer}
+                        </p>
+                      </details>
+                    );
+                  })}
                 </div>
               </section>
             )}
