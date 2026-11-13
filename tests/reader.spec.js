@@ -176,3 +176,98 @@ test("voice reader explains unavailable text-to-speech without hiding source", a
   await expect(page.locator(".voice-reader [role='status']")).toContainText("isn't available");
   await expect(page.locator(".source-text")).toContainText("That much gathers more");
 });
+
+
+test("audio bookmarks survive navigation, reload, and JSON backup restore", async ({ page }) => {
+  await page.addInitScript(() => {
+    class FakeUtterance { constructor(text) { this.text = text; } }
+    const synth = {
+      paused: false, current: null,
+      getVoices: () => [{ voiceURI: "test-voice", name: "Test Voice", lang: "en-US", localService: true }],
+      addEventListener() {}, removeEventListener() {},
+      speak(utterance) { this.current = utterance; window.__audioLog.push(utterance.text); },
+      cancel() { this.current = null; }, pause() { this.paused = true; },
+      resume() { this.paused = false; },
+    };
+    window.__audioLog = [];
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synth });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: FakeUtterance });
+  });
+
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("combobox", { name: "Start at passage" }).selectOption("4");
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 4");
+  await expect.poll(() => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("mks.audioBookmarks.v1"))?.["1"])).toBe(4);
+
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("combobox", { name: "Start at passage" }).selectOption("3");
+  await page.getByRole("button", { name: "Previous lesson" }).click();
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 4");
+
+  await page.getByRole("checkbox", { name: "Enable keyboard shortcuts" }).check();
+  await page.locator("#source-passage-4").focus();
+  await page.keyboard.press("Alt+Shift+P");
+  await expect(page.locator(".voice-progress")).toContainText("Reading passage 4");
+  await expect(page.locator("#source-passage-4")).toHaveClass(/passage-speaking/);
+
+  await page.keyboard.press("Alt+Shift+ArrowRight");
+  await expect(page.locator(".voice-progress")).toContainText("Reading passage 5");
+  await page.keyboard.press("Alt+Shift+P");
+  await expect(page.locator(".voice-progress")).toContainText("Paused at passage 5");
+  await page.keyboard.press("Alt+Shift+P");
+  await expect(page.locator(".voice-progress")).toContainText("Reading passage 5");
+  await page.keyboard.press("Alt+Shift+S");
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 5");
+  await expect(page.locator(".source-text .passage-speaking")).toHaveCount(0);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export backup" }).click();
+  const downloaded = await downloadPromise;
+  const backupFile = await downloaded.path();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 1");
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator('input[type="file"]').setInputFiles(backupFile);
+  await expect(page.getByRole("status")).toContainText("Backup restored");
+  await page.getByRole("tab", { name: "Original lesson" }).click();
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 5");
+  await expect(page.getByTestId("audio-bookmark")).toContainText("passage 5");
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 5");
+
+  expect(errors).toEqual([]);
+});
+
+test("keyboard shortcuts remain off by default and ignore editing controls", async ({ page }) => {
+  await page.addInitScript(() => {
+    const synth = {
+      getVoices: () => [], addEventListener() {}, removeEventListener() {},
+      cancel() {}, pause() {}, resume() {},
+      speak() { window.__speechCalls++; },
+    };
+    window.__speechCalls = 0;
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: synth });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      configurable: true, value: class { constructor(text) { this.text = text; } },
+    });
+  });
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  const checkbox = page.getByRole("checkbox", { name: "Enable keyboard shortcuts" });
+  await expect(checkbox).not.toBeChecked();
+  await page.locator("#source-passage-1").focus();
+  await page.keyboard.press("Alt+Shift+P");
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 1");
+  expect(await page.evaluate(() => window.__speechCalls)).toBe(0);
+
+  await checkbox.check();
+  await page.getByRole("combobox", { name: "Start at passage" }).focus();
+  await page.keyboard.press("Alt+Shift+P");
+  await expect(page.locator(".voice-progress")).toContainText("Ready at passage 1");
+  expect(await page.evaluate(() => window.__speechCalls)).toBe(0);
+});
