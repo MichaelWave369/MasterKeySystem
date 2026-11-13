@@ -9,6 +9,7 @@ test("round-trips notes, progress, and selected week", () => {
     week: 24,
     bookmarks: { 1: 12, 24: 6 },
     practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
+    recallProgress: { "24:240": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
   });
   assert.deepEqual(parseBackup(JSON.stringify(original)), {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },
@@ -16,6 +17,7 @@ test("round-trips notes, progress, and selected week", () => {
     week: 24,
     bookmarks: { 1: 12, 24: 6 },
     practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
+    recallProgress: { "24:240": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
   });
 });
 
@@ -52,7 +54,7 @@ test("accepts earlier v1 backups without audio bookmarks", () => {
   const backup = createBackup({ notes: { 2: "Old note" }, completed: [2], week: 2 });
   delete backup.bookmarks;
   assert.deepEqual(parseBackup(JSON.stringify(backup)), {
-    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {}, practiceSessions: [],
+    week: 2, notes: { 2: "Old note" }, completed: [2], bookmarks: {}, practiceSessions: [], recallProgress: {},
   });
 });
 
@@ -82,4 +84,27 @@ test("rejects malformed, oversized, and unsafe practice history", () => {
   assert.throws(() => parseBackup(JSON.stringify(original)), /Practice history/);
   original.practiceSessions = Array.from({ length: 2001 }, () => ({ id: "ok", week: 1, at: "2026-11-12T12:30:00.000Z" }));
   assert.throws(() => parseBackup(JSON.stringify(original)), /Practice history/);
+});
+
+
+test("accepts earlier backups without recall progress", () => {
+  const backup = createBackup({ notes: {}, completed: [1], week: 1 });
+  delete backup.recallProgress;
+  assert.deepEqual(parseBackup(JSON.stringify(backup)).recallProgress, {});
+});
+
+test("rejects malformed recall keys, dates and record values", () => {
+  const original = createBackup({ notes: {}, completed: [], week: 1 });
+  for (const progress of [
+    { "0:1": { streak: 1, reviewedAt: "2026-11-12", dueOn: "2026-11-13" } },
+    { "1:240": { streak: 1, reviewedAt: "2026-11-12", dueOn: "2026-11-13" } },
+    { "1:1": { streak: 8, reviewedAt: "2026-11-12", dueOn: "2026-11-13" } },
+    { "1:1": { streak: 1, reviewedAt: "2026-02-30", dueOn: "2026-11-13" } },
+    { "1:1": { streak: 1, reviewedAt: "2026-11-13", dueOn: "2026-11-12" } },
+    JSON.parse('{"__proto__":{"streak":1,"reviewedAt":"2026-11-12","dueOn":"2026-11-13"}}'),
+  ]) {
+    original.recallProgress = progress;
+    assert.throws(() => parseBackup(JSON.stringify(original)), /Recall progress/);
+  }
+  assert.equal(Object.prototype.streak, undefined);
 });

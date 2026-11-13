@@ -47,6 +47,9 @@ jobs:
       - name: Validate original weekly exercise links
         run: npm run test:practice
 
+      - name: Validate source-backed recall deck and review schedule
+        run: npm run test:recall
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages

@@ -4,6 +4,8 @@ import LibraryTools from "./components/LibraryTools.jsx";
 import ConceptAtlas from "./components/ConceptAtlas.jsx";
 import VoiceReader from "./components/VoiceReader.jsx";
 import PracticeTracker from "./components/PracticeTracker.jsx";
+import RecallQuiz from "./components/RecallQuiz.jsx";
+import { nextReview } from "./quiz/recall.js";
 import { buildExerciseIndex } from "./practice/exercises.js";
 import { splitPassages } from "./concepts.js";
 
@@ -12,6 +14,7 @@ const SOURCE_EXERCISES = buildExerciseIndex(lessons);
 const TABS = [
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
+  { key: "recall", label: "Recall quiz" },
   { key: "practice", label: "Practice" },
   { key: "atlas", label: "Concept Atlas" },
   { key: "notes", label: "My notes" },
@@ -70,6 +73,7 @@ export default function App() {
   const [notes, setNotes] = useStored("mks.notes.v1", {});
   const [audioBookmarks, setAudioBookmarks] = useStored("mks.audioBookmarks.v1", {});
   const [practiceSessions, setPracticeSessions] = useStored("mks.practiceSessions.v1", []);
+  const [recallProgress, setRecallProgress] = useStored("mks.recallProgress.v1", {});
   const [readerSize, setReaderSize] = useStored("mks.readerSize.v1", "normal");
   const [query, setQuery] = useState("");
   const [showAbout, setShowAbout] = useState(false);
@@ -183,7 +187,15 @@ export default function App() {
     setPracticeSessions(previous => previous.filter(entry => entry.id !== id));
   }
 
+  function recordRecall(key, outcome) {
+    setRecallProgress(previous => ({
+      ...previous,
+      [key]: nextReview(previous[key], outcome),
+    }));
+  }
+
   function restoreStudy(backup) {
+    setRecallProgress(backup.recallProgress);
     setPracticeSessions(backup.practiceSessions);
     setNotes(backup.notes);
     setAudioBookmarks(backup.bookmarks);
@@ -251,7 +263,7 @@ export default function App() {
         </header>
         <LibraryTools
           notes={notes} completed={done} week={current.week} bookmarks={audioBookmarks}
-          practiceSessions={practiceSessions}
+          practiceSessions={practiceSessions} recallProgress={recallProgress}
           readerSize={readerSize} onReaderSizeChange={setReaderSize}
           onRestore={restoreStudy}
         />
@@ -263,7 +275,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, primary-source-linked exercises for every week, a private practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, primary-source-linked exercises for every week, a private practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -332,6 +344,11 @@ export default function App() {
                   ))}
                 </div>
               </section>
+            )}
+
+            {tab === "recall" && (
+              <RecallQuiz key={current.week} week={current.week}
+                progress={recallProgress} onReview={recordRecall} />
             )}
 
             {tab === "practice" && (
