@@ -10,6 +10,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 - **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, passage highlighting, saved listening positions, and optional keyboard shortcuts
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
+- **24-week study dashboard:** completion totals, practice logs, recall questions due, new questions, notes and listening bookmarks, with direct Read / Practice / Recall navigation
 - Collapsible original question/answer cards
 - Original source-linked exercise passages for every week, optional timer, and local practice journal
 - **Active Recall** for all 240 original printed study questions, with reveal-after-attempt, self-rating, due-review scheduling, and local progress backups
@@ -71,6 +72,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## 24-week study dashboard
+
+The **Study dashboard** is available from the navigation tab and the sidebar progress panel. It presents an overview of all 24 weeks with direct controls to open each week's **Original lesson**, **Practice**, or **Recall quiz**. Four summary metrics count completed lessons, recorded practice sessions, previously studied recall questions due for review, and new/unrated questions. The overview also shows note presence, listening bookmarks, reviewed-question totals, and recent local practice sessions.
+
+To avoid misleading counts, unseen questions are **new questions**, not previously reviewed questions due again. Review dates follow the Recall Quiz's UTC convention. The dashboard derives everything from existing browser data and stores nothing extra; existing JSON backup/restore covers the entire overview. All statistics describe use of the historical library, **not** proof of the author's medical or scientific claims.
 
 ## Active recall study mode
 

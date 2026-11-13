@@ -5,6 +5,7 @@ import ConceptAtlas from "./components/ConceptAtlas.jsx";
 import VoiceReader from "./components/VoiceReader.jsx";
 import PracticeTracker from "./components/PracticeTracker.jsx";
 import RecallQuiz from "./components/RecallQuiz.jsx";
+import StudyDashboard from "./components/StudyDashboard.jsx";
 import { nextReview } from "./quiz/recall.js";
 import { buildExerciseIndex } from "./practice/exercises.js";
 import { splitPassages } from "./concepts.js";
@@ -12,6 +13,7 @@ import { splitPassages } from "./concepts.js";
 const TOTAL = lessons.length;
 const SOURCE_EXERCISES = buildExerciseIndex(lessons);
 const TABS = [
+  { key: "dashboard", label: "Study dashboard" },
   { key: "read", label: "Original lesson" },
   { key: "questions", label: "Study questions" },
   { key: "recall", label: "Recall quiz" },
@@ -105,6 +107,18 @@ export default function App() {
     setTab("read");
     setShowAbout(false);
     window.history.replaceState(null, "", "#week-" + safe);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openStudySection(targetWeek, section) {
+    if (!Number.isInteger(targetWeek) || targetWeek < 1 || targetWeek > TOTAL ||
+        !["read", "practice", "recall", "notes"].includes(section)) return;
+    setWeek(targetWeek);
+    setActivePassage(0);
+    setSpokenPassage(0);
+    setTab(section);
+    setShowAbout(false);
+    window.history.replaceState(null, "", "#week-" + targetWeek);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -228,6 +242,12 @@ export default function App() {
             <div className="progress-fill" style={{ width: progress + "%" }} />
           </div>
           <p>Study at your own pace. Haanel originally recommended one part per week.</p>
+          <button type="button" className="dashboard-sidebar-link"
+            onClick={() => {
+              setShowAbout(false);
+              setTab("dashboard");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}>Open study dashboard</button>
         </div>
 
         <label className="search-label" htmlFor="lesson-search">FIND A LESSON OR PASSAGE</label>
@@ -275,7 +295,7 @@ export default function App() {
             <p className="lead">Charles F. Haanel's <em>The Master Key System</em> is presented here as a historic primary source, organized into its 24 original parts and accompanying sets of study questions.</p>
             <div className="reader-card about-card">
               <h2>What is included</h2>
-              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, primary-source-linked exercises for every week, a private practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
+              <p>The original 24 parts, all 240 study questions with their printed answers, a self-assessed active-recall quiz, a private 24-week study dashboard, primary-source-linked exercises for every week, a practice journal, notes with local backup and restore, completion tracking, searchable passages, source-linked concept navigation, a browser-based spoken lesson reader, offline access after your first visit, print mode, and a simple practice timer.</p>
               <h2>Text provenance</h2>
               <p>This edition is transcribed from the 156-page PDF supplied by the project's founder. PDF page markers and unrelated site branding were removed. Original language and historical claims are otherwise kept as source material. Some inherited scanning or transcription errors may remain; readers should consult the historical edition when exact wording is important.</p>
               <h2>Historically important, not scientific proof</h2>
@@ -290,10 +310,21 @@ export default function App() {
           <>
             <section className="hero">
               <div className="hero-copy">
-                <p className="section-kicker">WEEK {String(current.week).padStart(2, "0")} OF {TOTAL}</p>
-                <h1>{current.title}</h1>
-                <p className="lead">Read the original lesson. Reflect on the source. Make your own observations.</p>
-                <div className="hero-meta"><span>CHARLES F. HAANEL</span><span aria-hidden="true">·</span><span>ORIGINAL PART {current.week}</span><span aria-hidden="true">·</span><span>10 STUDY QUESTIONS</span></div>
+                {tab === "dashboard" ? (
+                  <>
+                    <p className="section-kicker">YOUR 24-WEEK STUDY MAP</p>
+                    <h1>Study dashboard</h1>
+                    <p className="lead">One private place to see what you have explored and choose what comes next.</p>
+                    <div className="hero-meta"><span>24 ORIGINAL LESSONS</span><span aria-hidden="true">·</span><span>240 STUDY QUESTIONS</span></div>
+                  </>
+                ) : (
+                  <>
+                    <p className="section-kicker">WEEK {String(current.week).padStart(2, "0")} OF {TOTAL}</p>
+                    <h1>{current.title}</h1>
+                    <p className="lead">Read the original lesson. Reflect on the source. Make your own observations.</p>
+                    <div className="hero-meta"><span>CHARLES F. HAANEL</span><span aria-hidden="true">·</span><span>ORIGINAL PART {current.week}</span><span aria-hidden="true">·</span><span>10 STUDY QUESTIONS</span></div>
+                  </>
+                )}
               </div>
               <div className="orbit-art" aria-hidden="true"><span className="orbit-one"/><span className="orbit-two"/><span className="orbit-three"/><span className="orbit-core">✦</span></div>
             </section>
@@ -305,6 +336,13 @@ export default function App() {
                   className={"tab" + (tab === item.key ? " selected" : "")}>{item.label}</button>
               ))}
             </div>
+
+            {tab === "dashboard" && (
+              <StudyDashboard currentWeek={current.week}
+                completed={done} notes={notes} bookmarks={audioBookmarks}
+                practiceSessions={practiceSessions} recallProgress={recallProgress}
+                onOpenSection={openStudySection} />
+            )}
 
             {tab === "read" && (
               <section className="reader-card" aria-label="Original lesson text">
