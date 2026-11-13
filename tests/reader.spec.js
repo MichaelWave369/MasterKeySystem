@@ -467,13 +467,13 @@ test("full-book search links literal results to highlighted original passages", 
   await expect(page.locator(".search-hit").first().locator("mark")).toContainText(/world within/i);
 
   await page.getByRole("button", { name: "Lesson passages" }).click();
-  await expect(page.locator(".search-hit")).not.toContainText("PRINTED STUDY QUESTION");
+  await expect(page.locator(".search-hit-meta").first()).toContainText("ORIGINAL PASSAGE");
   await page.locator(".search-hit").first()
     .getByRole("button", { name: "Open original passage" }).click();
   await expect(page).toHaveURL(/#week-\d+-p-\d+$/);
   await expect(page.getByRole("tab", { name: "Original lesson" }))
     .toHaveAttribute("aria-selected", "true");
-  await expect(page.locator(".source-text .passage-active mark")).toContainText(/world within/i);
+  await expect(page.locator(".source-text .passage-active mark").first()).toContainText(/world within/i);
 
   const url = page.url();
   await page.reload({ waitUntil: "networkidle" });
