@@ -50,6 +50,9 @@ jobs:
       - name: Validate source-backed recall deck and review schedule
         run: npm run test:recall
 
+      - name: Verify private 24-week dashboard metrics
+        run: npm run test:dashboard
+
       - name: Build React for repository subpath
         env:
           DEPLOY_TARGET: github-pages
