@@ -65,8 +65,8 @@ function cleanRecallProgress(raw) {
   for (const [key, record] of Object.entries(raw)) {
     const match = key.match(/^([1-9]|1[0-9]|2[0-4]):(\d{1,3})$/);
     const week = match ? Number(match[1]) : 0;
-    const number = match ? Number(match[2]) : 0;
-    if (!validWeek(week) || number < (week - 1) * 10 + 1 || number > week * 10 ||
+    const position = match ? Number(match[2]) : 0;
+    if (!validWeek(week) || position < 1 || position > 10 ||
         !record || typeof record !== "object" || Array.isArray(record) ||
         !Number.isInteger(record.streak) || record.streak < 0 || record.streak > 5 ||
         !validDay(record.reviewedAt) || !validDay(record.dueOn) ||

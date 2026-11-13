@@ -3,13 +3,16 @@
 export function parsePrintedQuestions(study, week) {
   return study.split(/(?=^\d+\.\s)/gm)
     .filter(block => /^\d+\.\s/.test(block.trim()))
-    .map(block => {
+    .map((block, index) => {
       const match = block.trim().match(/^(\d+)\.\s*([\s\S]*?\?)([\s\S]*)$/);
       if (!match) return null;
       const number = Number(match[1]);
       return {
-        key: week + ":" + number,
+        // Key is source order, not the printed number. A historical numbering
+        // irregularity appears in the seventh question of Part 13 (printed 27).
+        key: week + ":" + (index + 1),
         week,
+        position: index + 1,
         number,
         question: match[2].replace(/\s+/g, " ").trim(),
         answer: match[3].replace(/\s+/g, " ").trim(),

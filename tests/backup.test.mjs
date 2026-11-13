@@ -9,7 +9,7 @@ test("round-trips notes, progress, and selected week", () => {
     week: 24,
     bookmarks: { 1: 12, 24: 6 },
     practiceSessions: [{ id: "study-abc", week: 24, at: "2026-11-12T12:30:00.000Z" }],
-    recallProgress: { "24:240": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
+    recallProgress: { "24:10": { streak: 2, reviewedAt: "2026-11-12", dueOn: "2026-11-15" } },
   });
   assert.deepEqual(parseBackup(JSON.stringify(original)), {
     notes: { 1: "Observed stillness", 24: "Questions to investigate" },

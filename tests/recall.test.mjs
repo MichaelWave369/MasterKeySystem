@@ -12,12 +12,16 @@ test("exactly 240 unique original study questions, ten per week", () => {
   for (let week = 1; week <= 24; week++) {
     const part = cards.filter(card => card.week === week);
     assert.equal(part.length, 10, "Week " + week);
-    assert.deepEqual(part.map(card => card.number),
-      Array.from({ length: 10 }, (_, i) => (week - 1) * 10 + i + 1));
+    assert.deepEqual(part.map(card => card.position),
+      Array.from({ length: 10 }, (_, i) => i + 1));
+    assert.deepEqual(part.map(card => card.key),
+      Array.from({ length: 10 }, (_, i) => week + ":" + (i + 1)));
     assert.ok(part.every(card => card.question.endsWith("?") && card.answer.length > 0));
   }
   assert.equal(cards[0].question, "What is the world without in its relation to the world within?");
   assert.equal(cards[10].question, "What are the two modes of mental activity?");
+  // Preserve this edition's printed numbering irregularity, do not quietly edit it.
+  assert.equal(cards.find(card => card.key === "13:7").number, 27);
 });
 
 test("all source answers stay exactly in source order and wording (normalized whitespace only)", () => {
