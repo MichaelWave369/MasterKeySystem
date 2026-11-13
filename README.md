@@ -6,7 +6,7 @@ A free, responsive React reader for **Charles F. Haanel's public-domain *The Mas
 
 - All **24 original parts** reproduced from the project founder's 156-page PDF
 - All **240 printed study questions and answers**
-- Search across the complete source text
+- **Exact full-book source search** across lesson passages and all 240 printed study questions/answers, with literal highlighting and deep links to the original
 - **Listen to this lesson:** browser/device speech synthesis reads the original source aloud with voice selection, speed, pause/resume, navigation, passage highlighting, saved listening positions, and optional keyboard shortcuts
 - Editorial **Concept Atlas** for 10 recurring topics, with source-linked excerpts and reloadable passage URLs
 - Week-by-week navigation and a completion tracker
@@ -72,6 +72,12 @@ For a command-line preview of the same build, run:
 DEPLOY_TARGET=github-pages npm run build
 npm run preview:pages
 ~~~
+
+## Exact source search
+
+The **Book search** tab searches every original reading passage plus all 240 printed study questions and answers. Search is literal and case-insensitive, including phrases. Results are shown as original-source excerpts, with the matching wording highlighted. Filters narrow results to lesson passages or Q&A. Each result opens its exact original passage (`#week-N-p-M`) or printed study question (`#week-N-q-M`) in the reader; those links can be reloaded and bookmarked. The original text is never rewritten, uploaded or sent to a search service. Search works offline once the bundled site has been cached.
+
+Typing into the sidebar's existing lesson filter also offers **View exact source matches** to open a full result list. Highlights are session-local presentation aids; copied passage links preserve source location without including private search terms. Search matches are not scientific, historical or medical validation.
 
 ## 24-week study dashboard
 
