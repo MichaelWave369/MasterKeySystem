@@ -271,3 +271,62 @@ test("keyboard shortcuts remain off by default and ignore editing controls", asy
   await expect(page.locator(".voice-progress")).toContainText("Ready at passage 1");
   expect(await page.evaluate(() => window.__speechCalls)).toBe(0);
 });
+
+
+test("weekly practice source excerpts link to actual original passages", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await expect(page.getByRole("heading", { name: "Physical stillness" })).toBeVisible();
+  await expect(page.locator(".practice-source-passage").first()).toContainText("44. Now make the application:");
+
+  await page.locator(".practice-source-passage").first().getByRole("button", {
+    name: "View in original lesson",
+  }).click();
+  await expect(page.getByRole("tab", { name: "Original lesson" }))
+    .toHaveAttribute("aria-selected", "true");
+  await expect(page.locator(".source-text .passage-active")).toContainText("44. Now make the application:");
+  await expect(page).toHaveURL(/#week-1-p-\d+$/);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator(".source-text .passage-active")).toContainText("44. Now make the application:");
+
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("button", { name: "Next lesson" }).click();
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await expect(page.getByRole("heading", { name: "Photograph and attention" })).toBeVisible();
+  await expect(page.locator(".practice-source-passage")).toContainText("bring a photograph with you");
+  expect(errors).toEqual([]);
+});
+
+test("private practice history can be exported, restored, and removed", async ({ page }) => {
+  await page.goto("/MasterKeySystem/", { waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await expect(page.getByText("No practice sessions logged for this week.")).toBeVisible();
+  await page.getByRole("button", { name: "Record a practice session" }).click();
+  await expect(page.locator(".practice-count")).toContainText("1 sessions");
+  await expect(page.locator(".practice-session")).toHaveCount(1);
+
+  const downloadReady = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export backup" }).click();
+  const downloaded = await downloadReady;
+  const backupFile = await downloaded.path();
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await expect(page.locator(".practice-count")).toContainText("0 sessions");
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator('input[type="file"]').setInputFiles(backupFile);
+  await expect(page.getByRole("status")).toContainText("Backup restored");
+  await page.getByRole("tab", { name: "Practice" }).click();
+  await expect(page.locator(".practice-session")).toHaveCount(1);
+
+  await page.locator(".practice-session").getByRole("button", { name: /Remove practice entry/ }).click();
+  await expect(page.locator(".practice-session")).toHaveCount(0);
+  await expect(page.locator(".practice-count")).toContainText("0 sessions");
+});
